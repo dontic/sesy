@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+*.egg-info/
+*.egg
+.env
+.venv/
+venv/
+ENV/
+
+# Development/IDE
+.git/
+.gitignore
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.devcontainer/
+.github/
+
+# Project specific
+data/
+media/
+static/
+.env
+.env.template
+*.sql
+*.sqlite3
+.coverage
+htmlcov/
+.pytest_cache/
+celerybeat-schedule
+*.log
+
+# Docker
+.docker/
+docker-compose.override.yml
