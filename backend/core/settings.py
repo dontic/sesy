@@ -24,10 +24,7 @@ load_dotenv()
 # and having errors later on
 required_env_vars = [
     "DJANGO_SECRET_KEY",
-    "DJANGO_ALLOWED_HOSTS",
-    "DJANGO_ALLOWED_ORIGINS",
-    "DJANGO_CSRF_COOKIE_DOMAIN",
-    "DJANGO_SESSION_COOKIE_DOMAIN",
+    "DOMAIN",
     "DJANGO_DEBUG",
     "LOGGING_LOG_LEVEL",
     # Database
@@ -127,18 +124,24 @@ logging.config.dictConfig(LOGGING)
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
+# Domain-derived settings
+_DOMAIN = os.getenv("DOMAIN", "localhost")
+_IS_LOCALHOST = _DOMAIN == "localhost"
+_ORIGIN = f"http://{_DOMAIN}:5173" if _IS_LOCALHOST else f"https://{_DOMAIN}"
+FRONTEND_URL = _ORIGIN
+
 # Hosts
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "").split(",")
+ALLOWED_HOSTS = [_DOMAIN]
 
 # CSRF
-CSRF_TRUSTED_ORIGINS = os.getenv("DJANGO_ALLOWED_ORIGINS", "").split(",")
+CSRF_TRUSTED_ORIGINS = [_ORIGIN]
 CSRF_COOKIE_NAME = os.getenv("DJANGO_CSRF_COOKIE_NAME", "csrftoken")
-CSRF_COOKIE_DOMAIN = os.getenv("DJANGO_CSRF_COOKIE_DOMAIN")
+CSRF_COOKIE_DOMAIN = _DOMAIN
 CSRF_COOKIE_SAMESITE = "None"  # Allow the cookie on different domains
 CSRF_COOKIE_SECURE = True
 
 # CORS settings
-CORS_ORIGIN_WHITELIST = os.getenv("DJANGO_ALLOWED_ORIGINS", "").split(",")
+CORS_ORIGIN_WHITELIST = [_ORIGIN]
 CORS_ALLOW_METHODS = ["DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT"]
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -154,7 +157,7 @@ CORS_ALLOW_HEADERS = [
 CORS_ALLOW_CREDENTIALS = True
 
 # Authentication Sessions
-SESSION_COOKIE_DOMAIN = os.getenv("DJANGO_SESSION_COOKIE_DOMAIN")
+SESSION_COOKIE_DOMAIN = _DOMAIN
 SESSION_COOKIE_SAMESITE = "None"
 SESSION_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = False
