@@ -1,5 +1,13 @@
 from rest_framework import serializers
-from .models import Project, Tag, AudienceMember, SESConfiguration, EmailTemplate, Campaign, VerifiedDomain
+from .models import (
+    Project,
+    Tag,
+    AudienceMember,
+    SESConfiguration,
+    EmailTemplate,
+    Campaign,
+    VerifiedDomain,
+)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -14,19 +22,32 @@ class TagSerializer(serializers.ModelSerializer):
 
 
 class AudienceMemberSerializer(serializers.ModelSerializer):
-    tags = serializers.PrimaryKeyRelatedField(many=True, queryset=Tag.objects.none(), required=False)
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Tag.objects.none(), required=False
+    )
     tags_detail = TagSerializer(source="tags", many=True, read_only=True)
 
     class Meta:
         model = AudienceMember
-        fields = ["pk", "email", "first_name", "last_name", "tags", "tags_detail", "created_at", "updated_at"]
+        fields = [
+            "pk",
+            "email",
+            "first_name",
+            "last_name",
+            "tags",
+            "tags_detail",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["pk", "created_at", "updated_at"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         project = self.context.get("project")
         if project:
-            self.fields["tags"].child_relation.queryset = Tag.objects.filter(project=project)
+            self.fields["tags"].child_relation.queryset = Tag.objects.filter(
+                project=project
+            )
 
     def create(self, validated_data):
         project = self.context["project"]
@@ -55,6 +76,8 @@ class VerifiedDomainSerializer(serializers.ModelSerializer):
             "domain",
             "verification_token",
             "dkim_tokens",
+            "mail_from_domain",
+            "mail_from_status",
             "dns_records",
             "status",
             "last_checked_at",
@@ -65,6 +88,8 @@ class VerifiedDomainSerializer(serializers.ModelSerializer):
             "pk",
             "verification_token",
             "dkim_tokens",
+            "mail_from_domain",
+            "mail_from_status",
             "dns_records",
             "status",
             "last_checked_at",
@@ -73,19 +98,50 @@ class VerifiedDomainSerializer(serializers.ModelSerializer):
         ]
 
     def get_dns_records(self, obj):
+        dns_check_records = self.context.get("dns_check_records")
+        if dns_check_records is not None:
+            return dns_check_records
+
         records = []
         if obj.verification_token:
-            records.append({
-                "type": "TXT",
-                "name": f"_amazonses.{obj.domain}",
-                "value": obj.verification_token,
-            })
+            records.append(
+                {
+                    "type": "TXT",
+                    "name": f"_amazonses.{obj.domain}",
+                    "value": obj.verification_token,
+                }
+            )
         for token in obj.dkim_tokens:
-            records.append({
-                "type": "CNAME",
-                "name": f"{token}._domainkey.{obj.domain}",
-                "value": f"{token}.dkim.amazonses.com",
-            })
+            records.append(
+                {
+                    "type": "CNAME",
+                    "name": f"{token}._domainkey.{obj.domain}",
+                    "value": f"{token}.dkim.amazonses.com",
+                }
+            )
+        if obj.mail_from_domain and obj.aws_region:
+            records.append(
+                {
+                    "type": "MX",
+                    "name": obj.mail_from_domain,
+                    "value": f"feedback-smtp.{obj.aws_region}.amazonses.com",
+                    "priority": 10,
+                }
+            )
+            records.append(
+                {
+                    "type": "TXT",
+                    "name": obj.mail_from_domain,
+                    "value": "v=spf1 include:amazonses.com ~all",
+                }
+            )
+        records.append(
+            {
+                "type": "TXT",
+                "name": f"_dmarc.{obj.domain}",
+                "value": "v=DMARC1; p=none;",
+            }
+        )
         return records
 
 
@@ -132,7 +188,9 @@ class EmailTemplateSerializer(serializers.ModelSerializer):
 
 
 class CampaignSerializer(serializers.ModelSerializer):
-    tags = serializers.PrimaryKeyRelatedField(many=True, queryset=Tag.objects.none(), required=False)
+    tags = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Tag.objects.none(), required=False
+    )
     tags_detail = TagSerializer(source="tags", many=True, read_only=True)
     template_detail = EmailTemplateSerializer(source="template", read_only=True)
 
@@ -159,8 +217,12 @@ class CampaignSerializer(serializers.ModelSerializer):
         super().__init__(*args, **kwargs)
         project = self.context.get("project")
         if project:
-            self.fields["tags"].child_relation.queryset = Tag.objects.filter(project=project)
-            self.fields["template"].queryset = EmailTemplate.objects.filter(project=project)
+            self.fields["tags"].child_relation.queryset = Tag.objects.filter(
+                project=project
+            )
+            self.fields["template"].queryset = EmailTemplate.objects.filter(
+                project=project
+            )
 
     def create(self, validated_data):
         project = self.context["project"]

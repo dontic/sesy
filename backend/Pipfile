@@ -25,6 +25,7 @@ pytz = "*"
 pillow = "*"
 django-solo = "*"
 boto3 = "*"
+dnspython = "*"
 
 [dev-packages]
 celery-types = "*"

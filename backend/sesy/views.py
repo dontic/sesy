@@ -31,14 +31,6 @@ def _get_ses_client():
     )
 
 
-def _map_ses_status(ses_status, verified_const, pending_const, failed_const):
-    if ses_status == "Success":
-        return verified_const
-    if ses_status in ("Failed", "TemporaryFailure"):
-        return failed_const
-    return pending_const
-
-
 @extend_schema_view(
     list=extend_schema(tags=["Projects"]),
     create=extend_schema(tags=["Projects"]),
@@ -223,10 +215,17 @@ class ProjectDomainView(APIView):
         if VerifiedDomain.objects.filter(domain=domain).exists():
             raise ValidationError({"domain": "This domain is already registered."})
 
+        config = SESConfiguration.get_solo()
         client = _get_ses_client()
+        mail_from_domain = f"sesy.{domain}"
         try:
             verify_resp = client.verify_domain_identity(Domain=domain)
             dkim_resp = client.verify_domain_dkim(Domain=domain)
+            client.set_identity_mail_from_domain(
+                Identity=domain,
+                MailFromDomain=mail_from_domain,
+                BehaviorOnMXFailure="UseDefaultValue",
+            )
         except (BotoCoreError, ClientError) as exc:
             raise ValidationError({"detail": str(exc)})
 
@@ -235,6 +234,8 @@ class ProjectDomainView(APIView):
             domain=domain,
             verification_token=verify_resp["VerificationToken"],
             dkim_tokens=dkim_resp["DkimTokens"],
+            mail_from_domain=mail_from_domain,
+            aws_region=config.aws_region,
         )
         return Response(VerifiedDomainSerializer(instance).data, status=status.HTTP_201_CREATED)
 
@@ -267,20 +268,12 @@ class ProjectDomainCheckView(APIView):
         except VerifiedDomain.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
 
-        client = _get_ses_client()
-        try:
-            response = client.get_identity_verification_attributes(Identities=[instance.domain])
-            attrs = response["VerificationAttributes"].get(instance.domain, {})
-            ses_status = attrs.get("VerificationStatus", "NotStarted")
-        except (BotoCoreError, ClientError) as exc:
-            raise ValidationError({"detail": str(exc)})
-
-        instance.status = _map_ses_status(
-            ses_status, VerifiedDomain.STATUS_VERIFIED, VerifiedDomain.STATUS_PENDING, VerifiedDomain.STATUS_FAILED
-        )
+        dns_records, domain_status, mail_from_status = instance.check_dns()
+        instance.status = domain_status
+        instance.mail_from_status = mail_from_status
         instance.last_checked_at = timezone.now()
-        instance.save(update_fields=["status", "last_checked_at"])
-        return Response(VerifiedDomainSerializer(instance).data)
+        instance.save(update_fields=["status", "mail_from_status", "last_checked_at"])
+        return Response(VerifiedDomainSerializer(instance, context={"dns_check_records": dns_records}).data)
 
 
 @extend_schema_view(

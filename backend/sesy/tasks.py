@@ -96,33 +96,18 @@ def send_campaign_task(campaign_pk: int) -> None:
 
 @shared_task
 def check_pending_identities_task() -> None:
-    from .models import SESConfiguration, VerifiedDomain
-
-    ses_config = SESConfiguration.get_solo()
-    if not ses_config.aws_access_key_id:
-        logger.warning("check_pending_identities_task: SES configuration is not set up.")
-        return
-
-    client = _ses_client_from_config(ses_config)
+    from .models import VerifiedDomain
 
     pending_domains = list(VerifiedDomain.objects.filter(status=VerifiedDomain.STATUS_PENDING))
     if not pending_domains:
         return
 
-    try:
-        identities = [d.domain for d in pending_domains]
-        response = client.get_identity_verification_attributes(Identities=identities)
-        attrs = response["VerificationAttributes"]
-        now = timezone.now()
-        for domain in pending_domains:
-            ses_status = attrs.get(domain.domain, {}).get("VerificationStatus", "NotStarted")
-            if ses_status == "Success":
-                domain.status = VerifiedDomain.STATUS_VERIFIED
-            elif ses_status in ("Failed", "TemporaryFailure"):
-                domain.status = VerifiedDomain.STATUS_FAILED
-            else:
-                domain.status = VerifiedDomain.STATUS_PENDING
-            domain.last_checked_at = now
-            domain.save(update_fields=["status", "last_checked_at"])
-    except (BotoCoreError, ClientError) as exc:
-        logger.error("check_pending_identities_task: domain check failed: %s", exc)
+    now = timezone.now()
+    for domain in pending_domains:
+        try:
+            _, domain.status, domain.mail_from_status = domain.check_dns()
+        except Exception as exc:
+            logger.error("check_pending_identities_task: DNS check failed for %s: %s", domain.domain, exc)
+            continue
+        domain.last_checked_at = now
+        domain.save(update_fields=["status", "mail_from_status", "last_checked_at"])
