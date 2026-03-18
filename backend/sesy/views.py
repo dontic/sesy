@@ -16,6 +16,7 @@ from .serializers import (
     EmailTemplateSerializer,
     CampaignSerializer,
     VerifiedDomainSerializer,
+    UnsubscribeSerializer,
 )
 
 
@@ -335,7 +336,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
         context["project"] = self._get_project()
         return context
 
-    @extend_schema(tags=["Campaigns"], request=None, responses={200: None})
+    @extend_schema(tags=["Campaigns"], request=None, responses={200: CampaignSerializer})
     @action(detail=True, methods=["post"])
     def send(self, request, project_pk=None, pk=None):
         from .tasks import send_campaign_task
@@ -353,3 +354,24 @@ class CampaignViewSet(viewsets.ModelViewSet):
             )
         send_campaign_task.delay(campaign.pk)
         return Response({"detail": "Campaign send initiated."})
+
+
+class UnsubscribeView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        tags=["Unsubscribe"],
+        request=UnsubscribeSerializer,
+        responses={200: None},
+    )
+    def post(self, request, project_pk):
+        project = Project.objects.filter(pk=project_pk).first()
+        if not project:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        serializer = UnsubscribeSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+
+        AudienceMember.objects.filter(project=project, email=email).update(subscribed=False)
+        return Response({"detail": "You have been unsubscribed successfully."})

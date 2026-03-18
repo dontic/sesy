@@ -51,3 +51,5 @@ class CampaignAdmin(admin.ModelAdmin):
     list_filter = ["project", "status"]
     search_fields = ["name", "from_email"]
     filter_horizontal = ["tags"]
+
+

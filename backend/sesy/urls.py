@@ -10,6 +10,7 @@ from .views import (
     CampaignViewSet,
     ProjectDomainView,
     ProjectDomainCheckView,
+    UnsubscribeView,
 )
 
 router = routers.DefaultRouter()
@@ -44,6 +45,11 @@ urlpatterns = (
             "projects/<int:project_pk>/domain/check/",
             ProjectDomainCheckView.as_view(),
             name="project-domain-check",
+        ),
+        path(
+            "projects/<int:project_pk>/unsubscribe/",
+            UnsubscribeView.as_view(),
+            name="project-unsubscribe",
         ),
     ]
 )

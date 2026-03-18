@@ -263,6 +263,7 @@ class AudienceMember(models.Model):
     email = models.EmailField()
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
+    subscribed = models.BooleanField(default=True)
     tags = models.ManyToManyField(Tag, blank=True, related_name="audience_members")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

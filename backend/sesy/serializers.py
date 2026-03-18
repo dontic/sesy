@@ -34,6 +34,7 @@ class AudienceMemberSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
+            "subscribed",
             "tags",
             "tags_detail",
             "created_at",
@@ -239,3 +240,7 @@ class CampaignSerializer(serializers.ModelSerializer):
         if tags is not None:
             instance.tags.set(tags)
         return instance
+
+
+class UnsubscribeSerializer(serializers.Serializer):
+    email = serializers.EmailField()

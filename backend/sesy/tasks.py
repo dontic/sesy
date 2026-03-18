@@ -4,6 +4,7 @@ import time
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from celery import shared_task
+from django.conf import settings
 from django.utils import timezone
 
 logger = logging.getLogger("sesy")
@@ -16,6 +17,24 @@ def _ses_client_from_config(config):
         aws_secret_access_key=config.aws_secret_access_key,
         region_name=config.aws_region,
     )
+
+
+def _build_unsubscribe_footer(unsubscribe_url: str) -> str:
+    return (
+        '<div style="margin-top:32px;padding-top:16px;border-top:1px solid #e0e0e0;'
+        'text-align:center;font-size:12px;color:#888888;font-family:sans-serif;">'
+        "You are receiving this email because you are subscribed to our mailing list.<br>"
+        f'<a href="{unsubscribe_url}" style="color:#888888;">Unsubscribe</a>'
+        "</div>"
+    )
+
+
+def _inject_footer(html: str, footer: str) -> str:
+    lower = html.lower()
+    idx = lower.rfind("</body>")
+    if idx != -1:
+        return html[:idx] + footer + html[idx:]
+    return html + footer
 
 
 @shared_task
@@ -36,11 +55,12 @@ def send_campaign_task(campaign_pk: int) -> None:
         return
 
     if campaign.send_to_all:
-        recipients = list(AudienceMember.objects.filter(project=campaign.project))
+        recipients = list(AudienceMember.objects.filter(project=campaign.project, subscribed=True))
     else:
         recipients = list(
             AudienceMember.objects.filter(
                 project=campaign.project,
+                subscribed=True,
                 tags__in=campaign.tags.all(),
             ).distinct()
         )
@@ -68,6 +88,13 @@ def send_campaign_task(campaign_pk: int) -> None:
             subject = campaign.template.subject.replace(
                 "{{first_name}}", member.first_name
             ).replace("{{last_name}}", member.last_name)
+
+            unsubscribe_url = (
+                f"{settings.FRONTEND_URL}/unsubscribe"
+                f"?email={member.email}&project={campaign.project.pk}"
+            )
+            footer = _build_unsubscribe_footer(unsubscribe_url)
+            html = _inject_footer(html, footer)
 
             client.send_email(
                 Source=from_address,
