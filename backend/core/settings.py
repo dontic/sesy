@@ -114,6 +114,12 @@ LOGGING = {
             "handlers": ["console"],
             "propagate": False,
         },
+        # Sesy logger
+        "sesy": {
+            "level": os.getenv("LOGGING_LOG_LEVEL", "DEBUG"),
+            "handlers": ["console"],
+            "propagate": False,
+        },
     },
 }
 logging.config.dictConfig(LOGGING)
@@ -182,7 +188,7 @@ INSTALLED_APPS = [
     # ------------------------------ DJANGO CLEANUP ------------------------------ #
     "django_cleanup",
     # -------------------------------- CUSTOM APPS ------------------------------- #
-    # "myapp",  # My app
+    "sesy",  # Audience and campaign manager
 ]
 
 # ---------------------------------------------------------------------------- #

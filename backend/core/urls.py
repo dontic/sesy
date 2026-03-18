@@ -25,6 +25,7 @@ from health_check.views import HealthCheckView
 
 urlpatterns = [
     path("auth/", include("authentication.urls")),
+    path("sesy/", include("sesy.urls")),
     path(
         "ht/",
         HealthCheckView.as_view(
