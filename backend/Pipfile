@@ -24,6 +24,7 @@ django-cleanup = "*"
 pytz = "*"
 pillow = "*"
 django-solo = "*"
+boto3 = "*"
 
 [dev-packages]
 celery-types = "*"

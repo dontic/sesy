@@ -187,6 +187,8 @@ INSTALLED_APPS = [
     "health_check",  # required
     # ------------------------------ DJANGO CLEANUP ------------------------------ #
     "django_cleanup",
+    # --------------------------------- SOLO ------------------------------------ #
+    "solo",  # Django Solo (singleton models)
     # -------------------------------- CUSTOM APPS ------------------------------- #
     "sesy",  # Audience and campaign manager
 ]

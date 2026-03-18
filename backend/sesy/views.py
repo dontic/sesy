@@ -1,8 +1,42 @@
-from rest_framework import viewsets, permissions
-from rest_framework.exceptions import PermissionDenied
+import boto3
+from botocore.exceptions import BotoCoreError, ClientError
+from django.utils import timezone
+from rest_framework import viewsets, permissions, status
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from .models import Project, Tag, AudienceMember
-from .serializers import ProjectSerializer, TagSerializer, AudienceMemberSerializer
+from .models import Project, Tag, AudienceMember, SESConfiguration, EmailTemplate, Campaign, VerifiedDomain
+from .serializers import (
+    ProjectSerializer,
+    TagSerializer,
+    AudienceMemberSerializer,
+    SESConfigurationSerializer,
+    EmailTemplateSerializer,
+    CampaignSerializer,
+    VerifiedDomainSerializer,
+)
+
+
+def _get_ses_client():
+    config = SESConfiguration.get_solo()
+    if not config.aws_access_key_id:
+        raise ValidationError({"detail": "SES configuration has not been set up."})
+    return boto3.client(
+        "ses",
+        aws_access_key_id=config.aws_access_key_id,
+        aws_secret_access_key=config.aws_secret_access_key,
+        region_name=config.aws_region,
+    )
+
+
+def _map_ses_status(ses_status, verified_const, pending_const, failed_const):
+    if ses_status == "Success":
+        return verified_const
+    if ses_status in ("Failed", "TemporaryFailure"):
+        return failed_const
+    return pending_const
 
 
 @extend_schema_view(
@@ -79,3 +113,250 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context["project"] = self._get_project()
         return context
+
+
+class SESConfigurationView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        tags=["SES Configuration"],
+        responses={200: SESConfigurationSerializer},
+    )
+    def get(self, request):
+        config = SESConfiguration.get_solo()
+        return Response(SESConfigurationSerializer(config).data)
+
+    @extend_schema(
+        tags=["SES Configuration"],
+        request=SESConfigurationSerializer,
+        responses={200: SESConfigurationSerializer},
+    )
+    def put(self, request):
+        config = SESConfiguration.get_solo()
+        serializer = SESConfigurationSerializer(config, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=["SES Configuration"],
+        request=SESConfigurationSerializer,
+        responses={200: SESConfigurationSerializer},
+    )
+    def patch(self, request):
+        config = SESConfiguration.get_solo()
+        serializer = SESConfigurationSerializer(config, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    @extend_schema(
+        tags=["SES Configuration"],
+        responses={204: None},
+    )
+    def delete(self, request):
+        SESConfiguration.objects.filter(pk=SESConfiguration.singleton_instance_id).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class SESConfigurationCheckProductionStatusView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        tags=["SES Configuration"],
+        request=None,
+        responses={200: SESConfigurationSerializer},
+    )
+    def post(self, request):
+        config = SESConfiguration.get_solo()
+        if not config.aws_access_key_id:
+            raise ValidationError({"detail": "SES configuration has not been set up."})
+
+        client = boto3.client(
+            "sesv2",
+            aws_access_key_id=config.aws_access_key_id,
+            aws_secret_access_key=config.aws_secret_access_key,
+            region_name=config.aws_region,
+        )
+        try:
+            response = client.get_account()
+        except (BotoCoreError, ClientError) as exc:
+            raise ValidationError({"detail": str(exc)})
+
+        if response.get("ProductionAccessEnabled"):
+            config.production_status = SESConfiguration.PRODUCTION_STATUS_PRODUCTION
+        else:
+            config.production_status = SESConfiguration.PRODUCTION_STATUS_SANDBOX
+        config.save(update_fields=["production_status"])
+        return Response(SESConfigurationSerializer(config).data)
+
+
+class ProjectDomainView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _get_project(self, request, project_pk):
+        project = Project.objects.filter(pk=project_pk, owner=request.user).first()
+        if not project:
+            raise PermissionDenied()
+        return project
+
+    @extend_schema(tags=["Verified Domains"], responses={200: VerifiedDomainSerializer})
+    def get(self, request, project_pk):
+        project = self._get_project(request, project_pk)
+        try:
+            instance = project.domain
+        except VerifiedDomain.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(VerifiedDomainSerializer(instance).data)
+
+    @extend_schema(tags=["Verified Domains"], request=VerifiedDomainSerializer, responses={201: VerifiedDomainSerializer})
+    def post(self, request, project_pk):
+        project = self._get_project(request, project_pk)
+
+        if VerifiedDomain.objects.filter(project=project).exists():
+            raise ValidationError({"detail": "This project already has a verified domain."})
+
+        serializer = VerifiedDomainSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        domain = serializer.validated_data["domain"]
+
+        if VerifiedDomain.objects.filter(domain=domain).exists():
+            raise ValidationError({"domain": "This domain is already registered."})
+
+        client = _get_ses_client()
+        try:
+            verify_resp = client.verify_domain_identity(Domain=domain)
+            dkim_resp = client.verify_domain_dkim(Domain=domain)
+        except (BotoCoreError, ClientError) as exc:
+            raise ValidationError({"detail": str(exc)})
+
+        instance = VerifiedDomain.objects.create(
+            project=project,
+            domain=domain,
+            verification_token=verify_resp["VerificationToken"],
+            dkim_tokens=dkim_resp["DkimTokens"],
+        )
+        return Response(VerifiedDomainSerializer(instance).data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(tags=["Verified Domains"], responses={204: None})
+    def delete(self, request, project_pk):
+        project = self._get_project(request, project_pk)
+        try:
+            instance = project.domain
+        except VerifiedDomain.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        client = _get_ses_client()
+        try:
+            client.delete_identity(Identity=instance.domain)
+        except (BotoCoreError, ClientError):
+            pass  # best-effort; delete locally regardless
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProjectDomainCheckView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(tags=["Verified Domains"], request=None, responses={200: VerifiedDomainSerializer})
+    def post(self, request, project_pk):
+        project = Project.objects.filter(pk=project_pk, owner=request.user).first()
+        if not project:
+            raise PermissionDenied()
+        try:
+            instance = project.domain
+        except VerifiedDomain.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        client = _get_ses_client()
+        try:
+            response = client.get_identity_verification_attributes(Identities=[instance.domain])
+            attrs = response["VerificationAttributes"].get(instance.domain, {})
+            ses_status = attrs.get("VerificationStatus", "NotStarted")
+        except (BotoCoreError, ClientError) as exc:
+            raise ValidationError({"detail": str(exc)})
+
+        instance.status = _map_ses_status(
+            ses_status, VerifiedDomain.STATUS_VERIFIED, VerifiedDomain.STATUS_PENDING, VerifiedDomain.STATUS_FAILED
+        )
+        instance.last_checked_at = timezone.now()
+        instance.save(update_fields=["status", "last_checked_at"])
+        return Response(VerifiedDomainSerializer(instance).data)
+
+
+@extend_schema_view(
+    list=extend_schema(tags=["Email Templates"]),
+    create=extend_schema(tags=["Email Templates"]),
+    retrieve=extend_schema(tags=["Email Templates"]),
+    update=extend_schema(tags=["Email Templates"]),
+    partial_update=extend_schema(tags=["Email Templates"]),
+    destroy=extend_schema(tags=["Email Templates"]),
+)
+class EmailTemplateViewSet(viewsets.ModelViewSet):
+    serializer_class = EmailTemplateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _get_project(self):
+        project = Project.objects.filter(
+            pk=self.kwargs["project_pk"],
+            owner=self.request.user,
+        ).first()
+        if not project:
+            raise PermissionDenied()
+        return project
+
+    def get_queryset(self):
+        return EmailTemplate.objects.filter(project=self._get_project())
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["project"] = self._get_project()
+        return context
+
+
+@extend_schema_view(
+    list=extend_schema(tags=["Campaigns"]),
+    create=extend_schema(tags=["Campaigns"]),
+    retrieve=extend_schema(tags=["Campaigns"]),
+    update=extend_schema(tags=["Campaigns"]),
+    partial_update=extend_schema(tags=["Campaigns"]),
+    destroy=extend_schema(tags=["Campaigns"]),
+)
+class CampaignViewSet(viewsets.ModelViewSet):
+    serializer_class = CampaignSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def _get_project(self):
+        project = Project.objects.filter(
+            pk=self.kwargs["project_pk"],
+            owner=self.request.user,
+        ).first()
+        if not project:
+            raise PermissionDenied()
+        return project
+
+    def get_queryset(self):
+        return Campaign.objects.filter(project=self._get_project()).prefetch_related("tags")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["project"] = self._get_project()
+        return context
+
+    @extend_schema(tags=["Campaigns"], request=None, responses={200: None})
+    @action(detail=True, methods=["post"])
+    def send(self, request, project_pk=None, pk=None):
+        from .tasks import send_campaign_task
+
+        campaign = self.get_object()
+        if campaign.status != Campaign.STATUS_DRAFT:
+            return Response(
+                {"detail": "Only draft campaigns can be sent."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not SESConfiguration.get_solo().aws_access_key_id:
+            return Response(
+                {"detail": "SES configuration has not been set up."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        send_campaign_task.delay(campaign.pk)
+        return Response({"detail": "Campaign send initiated."})
