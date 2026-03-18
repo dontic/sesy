@@ -30,9 +30,6 @@ required_env_vars = [
     "DJANGO_SESSION_COOKIE_DOMAIN",
     "DJANGO_DEBUG",
     "LOGGING_LOG_LEVEL",
-    # Frontend URLs
-    "FRONTEND_BASE_URL",
-    "LANDING_BASE_URL",
     # Database
     "POSTGRES_DB_NAME",
     "POSTGRES_USER",
@@ -224,13 +221,11 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                        ],
+            ],
         },
     },
 ]
 
-FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL")
-LANDING_BASE_URL = os.getenv("LANDING_BASE_URL")
 
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@example.com")
 
