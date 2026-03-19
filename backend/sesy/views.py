@@ -3,6 +3,7 @@ import io
 
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
+from django.db import IntegrityError
 from django.utils import timezone
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
@@ -11,10 +12,12 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, extend_schema_view
-from .models import Project, Tag, AudienceMember, SESConfiguration, Campaign, VerifiedDomain
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from .models import ApiKey, Project, Tag, AudienceMember, SESConfiguration, Campaign, VerifiedDomain
 from .serializers import (
+    ApiKeySerializer,
     ProjectSerializer,
+    PublicAudienceMemberSerializer,
     TagSerializer,
     AudienceMemberSerializer,
     AudienceMemberCsvUploadSerializer,
@@ -421,3 +424,102 @@ class UnsubscribeView(APIView):
 
         AudienceMember.objects.filter(project=project, email=email).update(subscribed=False)
         return Response({"detail": "You have been unsubscribed successfully."})
+
+
+class ApiKeyView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        tags=["API Key"],
+        responses={200: ApiKeySerializer, 404: None},
+    )
+    def get(self, request):
+        try:
+            api_key = request.user.api_key
+        except ApiKey.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(ApiKeySerializer(api_key).data)
+
+    @extend_schema(
+        tags=["API Key"],
+        request=None,
+        responses={200: ApiKeySerializer},
+        description="Create an API key if none exists, or regenerate the existing one.",
+    )
+    def post(self, request):
+        try:
+            api_key = request.user.api_key
+            api_key.key = ApiKey.generate_key()
+            api_key.save(update_fields=["key", "updated_at"])
+        except ApiKey.DoesNotExist:
+            api_key = ApiKey.objects.create(
+                user=request.user,
+                key=ApiKey.generate_key(),
+            )
+        return Response(ApiKeySerializer(api_key).data)
+
+
+class PublicAudienceMemberView(APIView):
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
+
+    @extend_schema(
+        tags=["Public API"],
+        request=PublicAudienceMemberSerializer,
+        responses={201: AudienceMemberSerializer, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+        parameters=[
+            OpenApiParameter(
+                name="X-API-Key",
+                type=str,
+                location=OpenApiParameter.HEADER,
+                required=True,
+                description="Your API key",
+            )
+        ],
+        description="Create an audience member in a project. Tags are created automatically if they don't exist.",
+    )
+    def post(self, request):
+        raw_key = request.headers.get("X-API-Key")
+        if not raw_key:
+            return Response({"detail": "API key is required."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            api_key = ApiKey.objects.select_related("user").get(key=raw_key)
+        except ApiKey.DoesNotExist:
+            return Response({"detail": "Invalid API key."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        serializer = PublicAudienceMemberSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        project = Project.objects.filter(
+            pk=data["project_pk"],
+            owner=api_key.user,
+        ).first()
+        if not project:
+            return Response({"detail": "Project not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        tags = []
+        for tag_name in data.get("tags", []):
+            tag, _ = Tag.objects.get_or_create(project=project, name=tag_name)
+            tags.append(tag)
+
+        try:
+            member = AudienceMember.objects.create(
+                project=project,
+                email=data["email"],
+                first_name=data["first_name"],
+                last_name=data["last_name"],
+                subscribed=data["subscribed"],
+            )
+        except IntegrityError:
+            return Response(
+                {"detail": "An audience member with this email already exists in this project."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        member.tags.set(tags)
+        return Response(
+            AudienceMemberSerializer(member, context={"project": project}).data,
+            status=status.HTTP_201_CREATED,
+        )

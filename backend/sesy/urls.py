@@ -1,12 +1,14 @@
 from django.urls import path
 from rest_framework_nested import routers
 from .views import (
+    ApiKeyView,
     ProjectViewSet,
     TagViewSet,
     AudienceMemberViewSet,
     SESConfigurationView,
     CampaignViewSet,
     ProjectDomainView,
+    PublicAudienceMemberView,
     UnsubscribeView,
 )
 
@@ -36,6 +38,16 @@ urlpatterns = (
             "projects/<int:project_pk>/unsubscribe/",
             UnsubscribeView.as_view(),
             name="project-unsubscribe",
+        ),
+        path(
+            "api-key/",
+            ApiKeyView.as_view(),
+            name="api-key",
+        ),
+        path(
+            "public/members/",
+            PublicAudienceMemberView.as_view(),
+            name="public-members",
         ),
     ]
 )

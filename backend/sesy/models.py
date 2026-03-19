@@ -1,3 +1,5 @@
+import secrets
+
 import dns.exception
 import dns.resolver
 from django.db import models
@@ -283,6 +285,24 @@ class AudienceMember(models.Model):
 
     def __str__(self):
         return f"{self.email} ({self.project.name})"
+
+
+class ApiKey(models.Model):
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="api_key",
+    )
+    key = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"API Key for {self.user}"
+
+    @staticmethod
+    def generate_key():
+        return secrets.token_urlsafe(32)
 
 
 class Campaign(models.Model):

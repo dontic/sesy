@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import (
+    ApiKey,
     Project,
     Tag,
     AudienceMember,
@@ -248,3 +249,23 @@ class UnsubscribeSerializer(serializers.Serializer):
 
 class AudienceMemberCsvUploadSerializer(serializers.Serializer):
     file = serializers.FileField()
+
+
+class ApiKeySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ApiKey
+        fields = ["pk", "key", "created_at", "updated_at"]
+        read_only_fields = ["pk", "key", "created_at", "updated_at"]
+
+
+class PublicAudienceMemberSerializer(serializers.Serializer):
+    project_pk = serializers.IntegerField()
+    email = serializers.EmailField()
+    first_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default="")
+    last_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default="")
+    subscribed = serializers.BooleanField(required=False, default=True)
+    tags = serializers.ListField(
+        child=serializers.CharField(max_length=100),
+        required=False,
+        default=list,
+    )
