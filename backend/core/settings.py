@@ -55,6 +55,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
 
+# Force script name for non-debug mode
+if not DEBUG:
+    FORCE_SCRIPT_NAME = "/api"
+
 # Logging
 LOGGING_CONFIG: None = None  # Avoid Django logging setup
 LOGGING = {
@@ -296,7 +300,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATIC_URL = "static/"
+STATIC_URL = "static/" if DEBUG else "{}/static/".format(FORCE_SCRIPT_NAME)
+if not DEBUG:
+    WHITENOISE_STATIC_PREFIX = "/static/"
+    LOGIN_REDIRECT_URL = "/api/admin/"
 
 MEDIA_ROOT = BASE_DIR / "media"
 MEDIA_URL = "media/"
