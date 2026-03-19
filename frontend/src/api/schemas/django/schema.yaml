@@ -1,0 +1,1503 @@
+openapi: 3.0.3
+info:
+  title: Django API
+  version: 1.0.0
+  description: API for my project
+paths:
+  /auth/login/:
+    post:
+      operationId: auth_login_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /auth/logout/:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /auth/me/:
+    get:
+      operationId: auth_me_retrieve
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+    put:
+      operationId: auth_me_update
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserUpdateRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /auth/password-change/:
+    post:
+      operationId: auth_password_change_create
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordChangeRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailResponse'
+          description: ''
+  /sesy/projects/:
+    get:
+      operationId: sesy_projects_list
+      tags:
+      - Projects
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+          description: ''
+    post:
+      operationId: sesy_projects_create
+      tags:
+      - Projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+  /sesy/projects/{id}/:
+    get:
+      operationId: sesy_projects_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Projects
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    put:
+      operationId: sesy_projects_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Projects
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProjectRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+          description: ''
+    delete:
+      operationId: sesy_projects_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Projects
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /sesy/projects/{project_pk}/campaigns/:
+    get:
+      operationId: sesy_projects_campaigns_list
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Campaigns
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Campaign'
+          description: ''
+    post:
+      operationId: sesy_projects_campaigns_create
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Campaigns
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CampaignRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CampaignRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+          description: ''
+  /sesy/projects/{project_pk}/campaigns/{id}/:
+    get:
+      operationId: sesy_projects_campaigns_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Campaigns
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+          description: ''
+    put:
+      operationId: sesy_projects_campaigns_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Campaigns
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CampaignRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CampaignRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CampaignRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+          description: ''
+    delete:
+      operationId: sesy_projects_campaigns_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Campaigns
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /sesy/projects/{project_pk}/campaigns/{id}/send/:
+    post:
+      operationId: sesy_projects_campaigns_send_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Campaigns
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Campaign'
+          description: ''
+  /sesy/projects/{project_pk}/domain/:
+    get:
+      operationId: sesy_projects_domain_retrieve
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Verified Domains
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifiedDomain'
+          description: ''
+    post:
+      operationId: sesy_projects_domain_create
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Verified Domains
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifiedDomainRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VerifiedDomainRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerifiedDomainRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifiedDomain'
+          description: ''
+    delete:
+      operationId: sesy_projects_domain_destroy
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Verified Domains
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /sesy/projects/{project_pk}/domain/check/:
+    post:
+      operationId: sesy_projects_domain_check_create
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Verified Domains
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifiedDomain'
+          description: ''
+  /sesy/projects/{project_pk}/members/:
+    get:
+      operationId: sesy_projects_members_list
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Members
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AudienceMember'
+          description: ''
+    post:
+      operationId: sesy_projects_members_create
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Members
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AudienceMemberRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AudienceMemberRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AudienceMemberRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudienceMember'
+          description: ''
+  /sesy/projects/{project_pk}/members/{id}/:
+    get:
+      operationId: sesy_projects_members_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Members
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudienceMember'
+          description: ''
+    put:
+      operationId: sesy_projects_members_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Members
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AudienceMemberRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/AudienceMemberRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AudienceMemberRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudienceMember'
+          description: ''
+    delete:
+      operationId: sesy_projects_members_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Members
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /sesy/projects/{project_pk}/tags/:
+    get:
+      operationId: sesy_projects_tags_list
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Tags
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+          description: ''
+    post:
+      operationId: sesy_projects_tags_create
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Tags
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TagRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TagRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+          description: ''
+  /sesy/projects/{project_pk}/tags/{id}/:
+    get:
+      operationId: sesy_projects_tags_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Tags
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+          description: ''
+    put:
+      operationId: sesy_projects_tags_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Tags
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TagRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TagRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+          description: ''
+    delete:
+      operationId: sesy_projects_tags_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Tags
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /sesy/projects/{project_pk}/templates/:
+    get:
+      operationId: sesy_projects_templates_list
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Email Templates
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EmailTemplate'
+          description: ''
+    post:
+      operationId: sesy_projects_templates_create
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Email Templates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailTemplateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTemplate'
+          description: ''
+  /sesy/projects/{project_pk}/templates/{id}/:
+    get:
+      operationId: sesy_projects_templates_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Email Templates
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTemplate'
+          description: ''
+    put:
+      operationId: sesy_projects_templates_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Email Templates
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailTemplateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/EmailTemplateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EmailTemplateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTemplate'
+          description: ''
+    delete:
+      operationId: sesy_projects_templates_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Email Templates
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /sesy/projects/{project_pk}/unsubscribe/:
+    post:
+      operationId: sesy_projects_unsubscribe_create
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: integer
+        required: true
+      tags:
+      - Unsubscribe
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnsubscribeRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UnsubscribeRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UnsubscribeRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /sesy/ses-configuration/:
+    get:
+      operationId: sesy_ses_configuration_retrieve
+      tags:
+      - SES Configuration
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SESConfiguration'
+          description: ''
+    put:
+      operationId: sesy_ses_configuration_update
+      tags:
+      - SES Configuration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SESConfigurationRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SESConfigurationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SESConfigurationRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SESConfiguration'
+          description: ''
+    delete:
+      operationId: sesy_ses_configuration_destroy
+      tags:
+      - SES Configuration
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /sesy/ses-configuration/check-production-status/:
+    post:
+      operationId: sesy_ses_configuration_check_production_status_create
+      tags:
+      - SES Configuration
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SESConfiguration'
+          description: ''
+components:
+  schemas:
+    AudienceMember:
+      type: object
+      properties:
+        pk:
+          type: integer
+          readOnly: true
+          title: ID
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        subscribed:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: integer
+        tags_detail:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - email
+      - pk
+      - tags_detail
+      - updated_at
+    AudienceMemberRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        subscribed:
+          type: boolean
+        tags:
+          type: array
+          items:
+            type: integer
+      required:
+      - email
+    Campaign:
+      type: object
+      properties:
+        pk:
+          type: integer
+          readOnly: true
+          title: ID
+        name:
+          type: string
+          maxLength: 255
+        from_email:
+          type: string
+          format: email
+          maxLength: 254
+        from_name:
+          type: string
+          maxLength: 255
+        template:
+          type: integer
+        template_detail:
+          allOf:
+          - $ref: '#/components/schemas/EmailTemplate'
+          readOnly: true
+        send_to_all:
+          type: boolean
+          description: Send to all audience members. If False, only send to members
+            with the specified tags.
+        tags:
+          type: array
+          items:
+            type: integer
+        tags_detail:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/CampaignStatusEnum'
+          readOnly: true
+        sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - from_email
+      - name
+      - pk
+      - sent_at
+      - status
+      - tags_detail
+      - template
+      - template_detail
+      - updated_at
+    CampaignRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        from_email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        from_name:
+          type: string
+          maxLength: 255
+        template:
+          type: integer
+        send_to_all:
+          type: boolean
+          description: Send to all audience members. If False, only send to members
+            with the specified tags.
+        tags:
+          type: array
+          items:
+            type: integer
+      required:
+      - from_email
+      - name
+      - template
+    CampaignStatusEnum:
+      enum:
+      - draft
+      - sending
+      - sent
+      - failed
+      type: string
+      description: |-
+        * `draft` - Draft
+        * `sending` - Sending
+        * `sent` - Sent
+        * `failed` - Failed
+    DetailResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    EmailTemplate:
+      type: object
+      properties:
+        pk:
+          type: integer
+          readOnly: true
+          title: ID
+        name:
+          type: string
+          maxLength: 255
+        subject:
+          type: string
+          maxLength: 998
+        html_body:
+          type: string
+          description: HTML body. Use {{first_name}} and {{last_name}} for personalization.
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - html_body
+      - name
+      - pk
+      - subject
+      - updated_at
+    EmailTemplateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 998
+        html_body:
+          type: string
+          minLength: 1
+          description: HTML body. Use {{first_name}} and {{last_name}} for personalization.
+      required:
+      - html_body
+      - name
+      - subject
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    MailFromStatusEnum:
+      enum:
+      - pending
+      - verified
+      - failed
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `verified` - Verified
+        * `failed` - Failed
+    PasswordChangeRequest:
+      type: object
+      properties:
+        old_password:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password1:
+          type: string
+          writeOnly: true
+          minLength: 1
+        new_password2:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - new_password1
+      - new_password2
+      - old_password
+    ProductionStatusEnum:
+      enum:
+      - unknown
+      - sandbox
+      - production
+      type: string
+      description: |-
+        * `unknown` - Unknown
+        * `sandbox` - Sandbox
+        * `production` - Production
+    Project:
+      type: object
+      properties:
+        pk:
+          type: integer
+          readOnly: true
+          title: ID
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        domain:
+          allOf:
+          - $ref: '#/components/schemas/VerifiedDomain'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - domain
+      - name
+      - pk
+      - updated_at
+    ProjectRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        description:
+          type: string
+      required:
+      - name
+    SESConfiguration:
+      type: object
+      properties:
+        pk:
+          type: integer
+          readOnly: true
+          title: ID
+        aws_access_key_id:
+          type: string
+          maxLength: 255
+        aws_region:
+          type: string
+          maxLength: 50
+        sending_rate:
+          type: number
+          format: double
+          description: Max emails per second
+        production_status:
+          allOf:
+          - $ref: '#/components/schemas/ProductionStatusEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - aws_access_key_id
+      - created_at
+      - pk
+      - production_status
+      - updated_at
+    SESConfigurationRequest:
+      type: object
+      properties:
+        aws_access_key_id:
+          type: string
+          minLength: 1
+          maxLength: 255
+        aws_secret_access_key:
+          type: string
+          writeOnly: true
+          minLength: 1
+        aws_region:
+          type: string
+          minLength: 1
+          maxLength: 50
+        sending_rate:
+          type: number
+          format: double
+          description: Max emails per second
+      required:
+      - aws_access_key_id
+      - aws_secret_access_key
+    StatusA39Enum:
+      enum:
+      - pending
+      - verified
+      - failed
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `verified` - Verified
+        * `failed` - Failed
+    Tag:
+      type: object
+      properties:
+        pk:
+          type: integer
+          readOnly: true
+          title: ID
+        name:
+          type: string
+          maxLength: 100
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - name
+      - pk
+    TagRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+      - name
+    UnsubscribeRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+      required:
+      - email
+    User:
+      type: object
+      properties:
+        pk:
+          type: integer
+          readOnly: true
+          title: ID
+        username:
+          type: string
+          readOnly: true
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+        email:
+          type: string
+          format: email
+          readOnly: true
+          title: Email address
+        first_name:
+          type: string
+          readOnly: true
+        last_name:
+          type: string
+          readOnly: true
+        is_staff:
+          type: boolean
+          readOnly: true
+          title: Staff status
+          description: Designates whether the user can log into this admin site.
+      required:
+      - email
+      - first_name
+      - is_staff
+      - last_name
+      - pk
+      - username
+    UserUpdateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+    VerifiedDomain:
+      type: object
+      properties:
+        pk:
+          type: integer
+          readOnly: true
+          title: ID
+        domain:
+          type: string
+          maxLength: 255
+        verification_token:
+          type: string
+          readOnly: true
+        dkim_tokens:
+          readOnly: true
+        mail_from_domain:
+          type: string
+          readOnly: true
+        mail_from_status:
+          allOf:
+          - $ref: '#/components/schemas/MailFromStatusEnum'
+          readOnly: true
+        dns_records:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusA39Enum'
+          readOnly: true
+        last_checked_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - dkim_tokens
+      - dns_records
+      - domain
+      - last_checked_at
+      - mail_from_domain
+      - mail_from_status
+      - pk
+      - status
+      - updated_at
+      - verification_token
+    VerifiedDomainRequest:
+      type: object
+      properties:
+        domain:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - domain
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+servers:
+- url: /
+  description: Current server
