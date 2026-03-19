@@ -128,3 +128,4 @@ Compare that to Mailchimp at ~$350/month for 50,000 contacts, or Brevo at ~$65/m
 - [ ] Prevent sending campaigns if SES configuration or domain are invalid
 - [ ] Campaign statistics via SES event webhooks
 - [ ] Batch audience member edits
+- [ ] Transactional emails
