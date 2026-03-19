@@ -40,13 +40,13 @@ Compare that to Mailchimp at ~$350/month for 50,000 contacts, or Brevo at ~$65/m
 
 ## Features
 
-- **AWS SES management** — Configure credentials, region, and sending rates directly from the UI
-- **Domain verification** — Guided DNS setup with real-time validation for TXT, DKIM, SPF, DMARC, and MAIL FROM records
-- **Audience management** — Import contacts via CSV, organize with tags, track subscription status
-- **Campaign editor** — HTML email editor with `{{first_name}}` / `{{last_name}}` personalization and automatic unsubscribe footers
-- **Async sending** — Campaigns send in the background via Celery, respecting your SES rate limits
-- **REST API** — Full API with OpenAPI/Swagger docs and API key authentication
-- **One-command deploy** — Complete stack (app, worker, scheduler, DB, cache, proxy) via Docker Compose
+- **AWS SES management** - Configure credentials, region, and sending rates directly from the UI
+- **Domain verification** - Guided DNS setup with real-time validation for TXT, DKIM, SPF, DMARC, and MAIL FROM records
+- **Audience management** - Import contacts via CSV, organize with tags, track subscription status
+- **Campaign editor** - HTML email editor with per-subscriber personalization (i.e. `first_name`) and automatic unsubscribe footers
+- **Async sending** - Campaigns send in the background via Celery, respecting your SES rate limits
+- **REST API** - Full API with OpenAPI/Swagger docs and API key authentication
+- **One-command deploy** - Complete stack (app, worker, scheduler, DB, cache, proxy) via Docker Compose
 
 ---
 
@@ -58,7 +58,7 @@ Compare that to Mailchimp at ~$350/month for 50,000 contacts, or Brevo at ~$65/m
 2. Update the environment variables in the compose file to match your domain
 3. Run `docker compose up -d`
 4. Open `http://localhost:8080`
-5. Log in with username `admin` / password `admin` — change these in the Settings page
+5. Log in with username `admin` / password `admin`, change these in the Settings page
 
 ---
 
@@ -115,7 +115,7 @@ Compare that to Mailchimp at ~$350/month for 50,000 contacts, or Brevo at ~$65/m
 
     ![Request production](./docs/requestproduction.png)
 
-14. AWS will email you when approved — this usually takes a few hours to a day. In the meantime, you can start importing your audience in the **Audience** tab.
+14. AWS will email you when approved. This usually takes a few hours to a day. In the meantime, you can start importing your audience in the **Audience** tab.
 
 ---
 
