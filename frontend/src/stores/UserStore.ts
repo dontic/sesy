@@ -3,7 +3,7 @@ import { create } from "zustand";
 import type { User } from "@/api/django/djangoAPI.schemas";
 
 interface UserStore {
-  user: (User & { full_name?: string }) | undefined;
+  user: (User & { full_name?: string; avatar?: string | null }) | undefined;
   setUser: (user: User & { full_name?: string }) => void;
   updateAvatar: (avatar: string | null) => void;
   clearUser: () => void;
@@ -23,15 +23,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
   updateAvatar: (avatar) => {
     const currentUser = get().user;
     if (currentUser) {
-      set({
-        user: {
-          ...currentUser,
-          profile: {
-            ...(currentUser as any).profile,
-            avatar
-          }
-        }
-      });
+      set({ user: { ...currentUser, avatar } });
     }
   },
   clearUser: () => set({ user: undefined })

@@ -5,7 +5,7 @@ import { Camera, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useUserStore } from "@/stores/UserStore";
 import { ImageCropper } from "./ImageCropper";
-import { profileAvatarDelete, profileAvatarUpload } from "@/api/django/authentication-profile/authentication-profile";
+import { customAxiosInstance } from "@/api/axios";
 
 export function AvatarUpload() {
   const { user, updateAvatar } = useUserStore();
@@ -48,7 +48,14 @@ export function AvatarUpload() {
       const blob = await response.blob();
       const file = new File([blob], "avatar.png", { type: "image/png" });
 
-      const uploadResponse = await profileAvatarUpload({ avatar: file });
+      const formData = new FormData();
+      formData.append("avatar", file);
+      const uploadResponse = await customAxiosInstance<{ avatar?: string }>({
+        url: `/auth/profile/avatar/`,
+        method: "POST",
+        headers: { "Content-Type": "multipart/form-data" },
+        data: formData,
+      });
 
       // Update the user store with the new avatar
       updateAvatar(uploadResponse.avatar ?? null);
@@ -68,7 +75,7 @@ export function AvatarUpload() {
   const handleDelete = async () => {
     setIsUploading(true);
     try {
-      await profileAvatarDelete();
+      await customAxiosInstance({ url: `/auth/profile/avatar/`, method: "DELETE" });
 
       // Update the user store to remove the avatar
       updateAvatar(null);
@@ -99,7 +106,7 @@ export function AvatarUpload() {
         <div className="relative group">
           <Avatar className="h-24 w-24">
             <AvatarImage
-              src={user?.profile?.avatar ?? undefined}
+              src={user?.avatar ?? undefined}
               alt={user?.full_name}
             />
             <AvatarFallback className="text-2xl">
@@ -138,7 +145,7 @@ export function AvatarUpload() {
               <Camera className="mr-2 h-4 w-4" />
               Upload New
             </Button>
-            {user?.profile.avatar && (
+            {user?.avatar && (
               <Button
                 type="button"
                 variant="outline"

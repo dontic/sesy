@@ -3,15 +3,9 @@ import type { LoginFormValues } from "@/components/login/LoginForm";
 import { toast } from "sonner";
 import RedirectIfAuthenticatedLayout from "@/layouts/RedirectIfAuthenticatedLayout";
 import { authLoginCreate } from "@/api/django/auth/auth";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "@/assets/icon.svg?react";
-import {
-  GoogleOAuthProvider,
-  GoogleLogin,
-  type CredentialResponse
-} from "@react-oauth/google";
-
 const Login = () => {
   const navigate = useNavigate();
 
