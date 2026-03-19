@@ -21,6 +21,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.conf import settings
 from django.conf.urls.static import static
 from health_check.views import HealthCheckView
+from redis.asyncio import Redis as RedisClient
 
 
 urlpatterns = [
@@ -34,8 +35,28 @@ urlpatterns = [
                 "health_check.Database",
                 "health_check.Storage",
                 # 3rd party checks
-                "health_check.contrib.redis.Redis",
-                "health_check.contrib.celery.Celery",
+                (
+                    "health_check.contrib.redis.Redis",
+                    {"client_factory": lambda: RedisClient.from_url(settings.REDIS_URL)},
+                ),
+                "health_check.contrib.celery.Ping",
+            ]
+        ),
+    ),
+    path("ht/startup-probe/", HealthCheckView.as_view(checks=["health_check.Database"])),
+    path("ht/liveness-probe/", HealthCheckView.as_view(checks=["health_check.Database"])),
+    path(
+        "ht/celery-probe/",
+        HealthCheckView.as_view(checks=["health_check.contrib.celery.Ping"]),
+    ),
+    path(
+        "ht/redis/",
+        HealthCheckView.as_view(
+            checks=[
+                (
+                    "health_check.contrib.redis.Redis",
+                    {"client_factory": lambda: RedisClient.from_url(settings.REDIS_URL)},
+                ),
             ]
         ),
     ),

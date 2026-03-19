@@ -382,14 +382,3 @@ CELERY_TASK_EAGER_PROPAGATES = DEBUG  # Propagate exceptions in eager mode
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 
-# ---------------------------------------------------------------------------- #
-#                                 HEALTH CHECK                                 #
-# ---------------------------------------------------------------------------- #
-HEALTH_CHECK = {
-    "SUBSETS": {
-        "startup-probe": ["MigrationsHealthCheck", "DatabaseBackend"],
-        "liveness-probe": ["DatabaseBackend"],
-        "celery-probe": ["CeleryHealthCheckCelery", "CeleryPingHealthCheck"],
-        "redis-probe": ["RedisHealthCheck"],
-    },
-}
