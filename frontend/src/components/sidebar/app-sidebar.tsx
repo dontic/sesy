@@ -1,5 +1,5 @@
 import * as React from "react";
-import { RocketIcon } from "lucide-react";
+import { RocketIcon, UsersIcon } from "lucide-react";
 
 import { NavMain } from "@/components/sidebar/nav-main";
 import { NavUser } from "@/components/sidebar/nav-user";
@@ -20,6 +20,11 @@ export const navData = [
     title: "Campaigns",
     url: "/campaigns",
     icon: RocketIcon
+  },
+  {
+    title: "Audience",
+    url: "/audience",
+    icon: UsersIcon
   }
 ];
 

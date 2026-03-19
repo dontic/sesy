@@ -1,13 +1,13 @@
 import SideBarLayout from "@/layouts/SideBarLayout";
 
-const Home = () => {
+const Audience = () => {
   return (
-    <SideBarLayout title="Home">
+    <SideBarLayout title="Audience">
       <div className="flex flex-col gap-4">
-        <h1>Home</h1>
+        <h1>Audience</h1>
       </div>
     </SideBarLayout>
   );
 };
 
-export default Home;
+export default Audience;

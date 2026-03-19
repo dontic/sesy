@@ -1,6 +1,10 @@
 import { StrictMode, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Navigate
+} from "react-router-dom";
 
 // Styles
 import "./index.css";
@@ -17,7 +21,7 @@ const Campaigns = lazy(() => import("@/pages/Campaigns"));
 const Login = lazy(() => import("@/pages/Login"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Settings = lazy(() => import("@/pages/Settings"));
-
+const Audience = lazy(() => import("@/pages/Audience"));
 const router = createBrowserRouter([
   {
     path: "/",
@@ -32,6 +36,14 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingFallback />}>
             <Campaigns />
+          </Suspense>
+        )
+      },
+      {
+        path: "/audience",
+        element: (
+          <Suspense fallback={<LoadingFallback />}>
+            <Audience />
           </Suspense>
         )
       },
