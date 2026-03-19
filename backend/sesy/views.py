@@ -37,12 +37,12 @@ def _get_ses_client():
     create=extend_schema(tags=["Projects"]),
     retrieve=extend_schema(tags=["Projects"]),
     update=extend_schema(tags=["Projects"]),
-    partial_update=extend_schema(tags=["Projects"]),
     destroy=extend_schema(tags=["Projects"]),
 )
 class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
     permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
 
     def get_queryset(self):
         return Project.objects.filter(owner=self.request.user)
@@ -53,12 +53,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
     create=extend_schema(tags=["Tags"]),
     retrieve=extend_schema(tags=["Tags"]),
     update=extend_schema(tags=["Tags"]),
-    partial_update=extend_schema(tags=["Tags"]),
     destroy=extend_schema(tags=["Tags"]),
 )
 class TagViewSet(viewsets.ModelViewSet):
     serializer_class = TagSerializer
     permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
 
     def _get_project(self):
         project = Project.objects.filter(
@@ -83,12 +83,12 @@ class TagViewSet(viewsets.ModelViewSet):
     create=extend_schema(tags=["Audience Members"]),
     retrieve=extend_schema(tags=["Audience Members"]),
     update=extend_schema(tags=["Audience Members"]),
-    partial_update=extend_schema(tags=["Audience Members"]),
     destroy=extend_schema(tags=["Audience Members"]),
 )
 class AudienceMemberViewSet(viewsets.ModelViewSet):
     serializer_class = AudienceMemberSerializer
     permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
 
     def _get_project(self):
         project = Project.objects.filter(
@@ -127,18 +127,6 @@ class SESConfigurationView(APIView):
     def put(self, request):
         config = SESConfiguration.get_solo()
         serializer = SESConfigurationSerializer(config, data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data)
-
-    @extend_schema(
-        tags=["SES Configuration"],
-        request=SESConfigurationSerializer,
-        responses={200: SESConfigurationSerializer},
-    )
-    def patch(self, request):
-        config = SESConfiguration.get_solo()
-        serializer = SESConfigurationSerializer(config, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
@@ -282,12 +270,12 @@ class ProjectDomainCheckView(APIView):
     create=extend_schema(tags=["Email Templates"]),
     retrieve=extend_schema(tags=["Email Templates"]),
     update=extend_schema(tags=["Email Templates"]),
-    partial_update=extend_schema(tags=["Email Templates"]),
     destroy=extend_schema(tags=["Email Templates"]),
 )
 class EmailTemplateViewSet(viewsets.ModelViewSet):
     serializer_class = EmailTemplateSerializer
     permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
 
     def _get_project(self):
         project = Project.objects.filter(
@@ -312,12 +300,12 @@ class EmailTemplateViewSet(viewsets.ModelViewSet):
     create=extend_schema(tags=["Campaigns"]),
     retrieve=extend_schema(tags=["Campaigns"]),
     update=extend_schema(tags=["Campaigns"]),
-    partial_update=extend_schema(tags=["Campaigns"]),
     destroy=extend_schema(tags=["Campaigns"]),
 )
 class CampaignViewSet(viewsets.ModelViewSet):
     serializer_class = CampaignSerializer
     permission_classes = [permissions.IsAuthenticated]
+    http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
 
     def _get_project(self):
         project = Project.objects.filter(
