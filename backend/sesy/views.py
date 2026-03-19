@@ -1,3 +1,6 @@
+import csv
+import io
+
 import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from django.utils import timezone
@@ -13,6 +16,7 @@ from .serializers import (
     ProjectSerializer,
     TagSerializer,
     AudienceMemberSerializer,
+    AudienceMemberCsvUploadSerializer,
     SESConfigurationSerializer,
     EmailTemplateSerializer,
     CampaignSerializer,
@@ -114,6 +118,72 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context["project"] = self._get_project()
         return context
+
+    @extend_schema(
+        tags=["Audience Members"],
+        request={"multipart/form-data": AudienceMemberCsvUploadSerializer},
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "created": {"type": "integer"},
+                    "skipped": {"type": "integer"},
+                    "total_rows": {"type": "integer"},
+                },
+            }
+        },
+    )
+    @action(detail=False, methods=["post"], url_path="upload-csv")
+    def upload_csv(self, request, project_pk=None):
+        project = self._get_project()
+
+        serializer = AudienceMemberCsvUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        csv_file = serializer.validated_data["file"]
+
+        raw = csv_file.read()
+        try:
+            content = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            content = raw.decode("latin-1")
+
+        reader = csv.DictReader(io.StringIO(content))
+        required_headers = {"email", "first_name", "last_name"}
+        if not reader.fieldnames or not required_headers.issubset(set(reader.fieldnames)):
+            return Response(
+                {"detail": "CSV must contain exactly these headers: email, first_name, last_name."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        members_to_create = []
+        for row in reader:
+            email = row["email"].strip()
+            if not email:
+                continue
+            members_to_create.append(
+                AudienceMember(
+                    project=project,
+                    email=email,
+                    first_name=row["first_name"].strip(),
+                    last_name=row["last_name"].strip(),
+                )
+            )
+
+        total_rows = len(members_to_create)
+        created_count = 0
+        chunk_size = 1000
+        for i in range(0, total_rows, chunk_size):
+            chunk = members_to_create[i : i + chunk_size]
+            inserted = AudienceMember.objects.bulk_create(chunk, ignore_conflicts=True)
+            created_count += len(inserted)
+
+        return Response(
+            {
+                "created": created_count,
+                "skipped": total_rows - created_count,
+                "total_rows": total_rows,
+            }
+        )
 
 
 class SESConfigurationView(APIView):

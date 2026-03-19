@@ -244,3 +244,7 @@ class CampaignSerializer(serializers.ModelSerializer):
 
 class UnsubscribeSerializer(serializers.Serializer):
     email = serializers.EmailField()
+
+
+class AudienceMemberCsvUploadSerializer(serializers.Serializer):
+    file = serializers.FileField()
