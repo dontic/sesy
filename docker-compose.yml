@@ -1,36 +1,32 @@
 name: sesy
 
 
-# Shared configuration for Django-based services (web server + worker + beat).
+# Shared configuration for Django-based services (web, worker, beat).
 x-django-app: &django-app
   restart: unless-stopped
   image: dontic/sesy-backend:latest
   environment: &django-env
-    # ── Django Core ──────────────────────────────────────────────────────
     DJANGO_SECRET_KEY: change-me
     DOMAIN: sesy.mydomain.com
-    # ── PostgreSQL (override if using an external PostgreSQL server) ─────────────
+    # Override these if connecting to an external PostgreSQL server.
     # POSTGRES_DB_NAME: django
     # POSTGRES_USER: django
     # POSTGRES_PASSWORD: django
     # POSTGRES_HOST: postgres
     # POSTGRES_PORT: "5432"
-    # ── Redis (override if using an external Redis server) ────────────────────────
+    # Override these if connecting to an external Redis server.
     # REDIS_HOST: redis
     # REDIS_PORT: "6379"
     # REDIS_DB: 0
   volumes:
-    # Media files volume — shared across all Django services
     - media:/app/backend/media
     - django_static:/app/backend/django_static
 
 services:
   # ---------------------------------------------------------------------------
-  # PostgreSQL Database
+  # PostgreSQL — primary relational database.
+  # Comment out if using an external PostgreSQL server.
   # ---------------------------------------------------------------------------
-  # Primary relational database for the application.
-  # Data is stored in a named volume.
-  # Comment out this service if using an external PostgreSQL server.
   postgres:
     restart: unless-stopped
     image: postgres:16-bullseye
@@ -40,27 +36,25 @@ services:
       POSTGRES_PASSWORD: django
     volumes:
       - postgresdata:/var/lib/postgresql/data
-    # Uncomment to expose PostgreSQL port for external access (e.g., DB GUI tools)
+    # Uncomment to expose the port for external access (e.g. a DB GUI).
     # ports:
     #   - "5432:5432"
 
   # ---------------------------------------------------------------------------
-  # Redis Cache & Message Broker
+  # Redis — cache backend and Celery message broker.
+  # Comment out if using an external Redis server.
   # ---------------------------------------------------------------------------
-  # In-memory store used as cache backend and Celery message broker.
-  # Comment out this service if using an external Redis server.
   redis:
     restart: unless-stopped
     image: redis:7.2.0-alpine
-    # Uncomment to expose Redis port for external access
+    # Uncomment to expose the port for external access.
     # ports:
     #   - "6379:6379"
 
   # ---------------------------------------------------------------------------
-  # Django Web Application
+  # Django — main application server (Gunicorn).
+  # Runs migrations and collectstatic on startup.
   # ---------------------------------------------------------------------------
-  # Main application server (Gunicorn). Handles HTTP requests, REST API,
-  # and runs migrations + static file collection on startup.
   django:
     <<: *django-app
     entrypoint: /app/backend/docker/entrypoint-django.sh
@@ -79,9 +73,8 @@ services:
       start_period: 20s
 
   # ---------------------------------------------------------------------------
-  # Celery Worker
+  # Celery Worker — processes background tasks.
   # ---------------------------------------------------------------------------
-  # Processes background tasks.
   worker:
     <<: *django-app
     entrypoint: /app/backend/docker/entrypoint-worker.sh
@@ -93,6 +86,9 @@ services:
       redis:
         condition: service_started
 
+  # ---------------------------------------------------------------------------
+  # Celery Beat — schedules periodic tasks.
+  # ---------------------------------------------------------------------------
   beat:
     <<: *django-app
     entrypoint: /app/backend/docker/entrypoint-beat.sh
@@ -104,7 +100,9 @@ services:
       redis:
         condition: service_started
 
-
+  # ---------------------------------------------------------------------------
+  # Frontend — React app served via 'serve'.
+  # ---------------------------------------------------------------------------
   frontend:
     restart: unless-stopped
     image: dontic/sesy-frontend:latest
@@ -112,10 +110,9 @@ services:
       - django
 
   # ---------------------------------------------------------------------------
-  # Nginx Reverse Proxy
+  # Nginx — reverse proxy. Routes / to the frontend and /api/ to Django.
+  # Config defined inline in the 'configs' section below.
   # ---------------------------------------------------------------------------
-  # Entry point for HTTP traffic. Proxies to Django and serves media files.
-  # Config is defined inline below
   nginx:
     image: nginx:1.28
     restart: unless-stopped
@@ -133,7 +130,7 @@ services:
 
 
 # ---------------------------------------------------------------------------
-# Nginx Configuration
+# Nginx configuration
 # ---------------------------------------------------------------------------
 configs:
   nginx_conf:
@@ -175,11 +172,7 @@ configs:
       }
 
 
-
 volumes:
   postgresdata:
   media:
   django_static:
-
-
-
