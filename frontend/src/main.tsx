@@ -22,6 +22,7 @@ const Login = lazy(() => import("@/pages/Login"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Audience = lazy(() => import("@/pages/Audience"));
+const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
 const router = createBrowserRouter([
   {
     path: "/",
@@ -62,6 +63,14 @@ const router = createBrowserRouter([
     element: (
       <Suspense fallback={<LoadingFallback />}>
         <Login />
+      </Suspense>
+    )
+  },
+  {
+    path: "/unsubscribe",
+    element: (
+      <Suspense fallback={<LoadingFallback />}>
+        <Unsubscribe />
       </Suspense>
     )
   },
