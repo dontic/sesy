@@ -25,8 +25,6 @@ load_dotenv()
 required_env_vars = [
     "DJANGO_SECRET_KEY",
     "DOMAIN",
-    "DJANGO_DEBUG",
-    "LOGGING_LOG_LEVEL",
 ]
 
 
@@ -44,7 +42,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ---------------------------------------------------------------------------- #
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
+DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
 
 # Force script name for non-debug mode
 if not DEBUG:
@@ -93,19 +91,19 @@ LOGGING = {
         },
         # Authentication logger
         "authentication": {
-            "level": os.getenv("LOGGING_LOG_LEVEL", "DEBUG"),
+            "level": os.getenv("LOGGING_LOG_LEVEL", "INFO"),
             "handlers": ["console"],
             "propagate": False,
         },
         # Utils logger
         "utils": {
-            "level": os.getenv("LOGGING_LOG_LEVEL", "DEBUG"),
+            "level": os.getenv("LOGGING_LOG_LEVEL", "INFO"),
             "handlers": ["console"],
             "propagate": False,
         },
         # Sesy logger
         "sesy": {
-            "level": os.getenv("LOGGING_LOG_LEVEL", "DEBUG"),
+            "level": os.getenv("LOGGING_LOG_LEVEL", "INFO"),
             "handlers": ["console"],
             "propagate": False,
         },
