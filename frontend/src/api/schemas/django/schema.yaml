@@ -780,140 +780,6 @@ paths:
       responses:
         '204':
           description: No response body
-  /sesy/projects/{project_pk}/templates/:
-    get:
-      operationId: sesy_projects_templates_list
-      parameters:
-      - in: path
-        name: project_pk
-        schema:
-          type: string
-        required: true
-      tags:
-      - Email Templates
-      security:
-      - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/EmailTemplate'
-          description: ''
-    post:
-      operationId: sesy_projects_templates_create
-      parameters:
-      - in: path
-        name: project_pk
-        schema:
-          type: string
-        required: true
-      tags:
-      - Email Templates
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EmailTemplateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/EmailTemplateRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/EmailTemplateRequest'
-        required: true
-      security:
-      - cookieAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmailTemplate'
-          description: ''
-  /sesy/projects/{project_pk}/templates/{id}/:
-    get:
-      operationId: sesy_projects_templates_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      - in: path
-        name: project_pk
-        schema:
-          type: string
-        required: true
-      tags:
-      - Email Templates
-      security:
-      - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmailTemplate'
-          description: ''
-    put:
-      operationId: sesy_projects_templates_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      - in: path
-        name: project_pk
-        schema:
-          type: string
-        required: true
-      tags:
-      - Email Templates
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/EmailTemplateRequest'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/EmailTemplateRequest'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/EmailTemplateRequest'
-        required: true
-      security:
-      - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/EmailTemplate'
-          description: ''
-    delete:
-      operationId: sesy_projects_templates_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: string
-        required: true
-      - in: path
-        name: project_pk
-        schema:
-          type: string
-        required: true
-      tags:
-      - Email Templates
-      security:
-      - cookieAuth: []
-      responses:
-        '204':
-          description: No response body
   /sesy/projects/{project_pk}/unsubscribe/:
     post:
       operationId: sesy_projects_unsubscribe_create
@@ -1096,12 +962,12 @@ components:
         from_name:
           type: string
           maxLength: 255
-        template:
-          type: integer
-        template_detail:
-          allOf:
-          - $ref: '#/components/schemas/EmailTemplate'
-          readOnly: true
+        subject:
+          type: string
+          maxLength: 998
+        html_body:
+          type: string
+          description: HTML body. Use {{first_name}} and {{last_name}} for personalization.
         send_to_all:
           type: boolean
           description: Send to all audience members. If False, only send to members
@@ -1135,13 +1001,13 @@ components:
       required:
       - created_at
       - from_email
+      - html_body
       - name
       - pk
       - sent_at
       - status
+      - subject
       - tags_detail
-      - template
-      - template_detail
       - updated_at
     CampaignRequest:
       type: object
@@ -1158,8 +1024,14 @@ components:
         from_name:
           type: string
           maxLength: 255
-        template:
-          type: integer
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 998
+        html_body:
+          type: string
+          minLength: 1
+          description: HTML body. Use {{first_name}} and {{last_name}} for personalization.
         send_to_all:
           type: boolean
           description: Send to all audience members. If False, only send to members
@@ -1170,8 +1042,9 @@ components:
             type: integer
       required:
       - from_email
+      - html_body
       - name
-      - template
+      - subject
     CampaignStatusEnum:
       enum:
       - draft
@@ -1191,56 +1064,6 @@ components:
           type: string
       required:
       - detail
-    EmailTemplate:
-      type: object
-      properties:
-        pk:
-          type: integer
-          readOnly: true
-          title: ID
-        name:
-          type: string
-          maxLength: 255
-        subject:
-          type: string
-          maxLength: 998
-        html_body:
-          type: string
-          description: HTML body. Use {{first_name}} and {{last_name}} for personalization.
-        created_at:
-          type: string
-          format: date-time
-          readOnly: true
-        updated_at:
-          type: string
-          format: date-time
-          readOnly: true
-      required:
-      - created_at
-      - html_body
-      - name
-      - pk
-      - subject
-      - updated_at
-    EmailTemplateRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          minLength: 1
-          maxLength: 255
-        subject:
-          type: string
-          minLength: 1
-          maxLength: 998
-        html_body:
-          type: string
-          minLength: 1
-          description: HTML body. Use {{first_name}} and {{last_name}} for personalization.
-      required:
-      - html_body
-      - name
-      - subject
     LoginRequest:
       type: object
       properties:

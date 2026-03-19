@@ -40,8 +40,10 @@ export interface Campaign {
   from_email: string;
   /** @maxLength 255 */
   from_name?: string;
-  template: number;
-  readonly template_detail: EmailTemplate;
+  /** @maxLength 998 */
+  subject: string;
+  /** HTML body. Use {{first_name}} and {{last_name}} for personalization. */
+  html_body: string;
   /** Send to all audience members. If False, only send to members with the specified tags. */
   send_to_all?: boolean;
   tags?: number[];
@@ -66,7 +68,16 @@ export interface CampaignRequest {
   from_email: string;
   /** @maxLength 255 */
   from_name?: string;
-  template: number;
+  /**
+   * @minLength 1
+   * @maxLength 998
+   */
+  subject: string;
+  /**
+   * HTML body. Use {{first_name}} and {{last_name}} for personalization.
+   * @minLength 1
+   */
+  html_body: string;
   /** Send to all audience members. If False, only send to members with the specified tags. */
   send_to_all?: boolean;
   tags?: number[];
@@ -91,36 +102,6 @@ export const CampaignStatusEnum = {
 
 export interface DetailResponse {
   detail: string;
-}
-
-export interface EmailTemplate {
-  readonly pk: number;
-  /** @maxLength 255 */
-  name: string;
-  /** @maxLength 998 */
-  subject: string;
-  /** HTML body. Use {{first_name}} and {{last_name}} for personalization. */
-  html_body: string;
-  readonly created_at: string;
-  readonly updated_at: string;
-}
-
-export interface EmailTemplateRequest {
-  /**
-   * @minLength 1
-   * @maxLength 255
-   */
-  name: string;
-  /**
-   * @minLength 1
-   * @maxLength 998
-   */
-  subject: string;
-  /**
-   * HTML body. Use {{first_name}} and {{last_name}} for personalization.
-   * @minLength 1
-   */
-  html_body: string;
 }
 
 export interface LoginRequest {
