@@ -5,7 +5,6 @@ from .views import (
     TagViewSet,
     AudienceMemberViewSet,
     SESConfigurationView,
-    SESConfigurationCheckProductionStatusView,
     CampaignViewSet,
     ProjectDomainView,
     ProjectDomainCheckView,
@@ -28,11 +27,6 @@ urlpatterns = (
             "ses-configuration/",
             SESConfigurationView.as_view(),
             name="ses-configuration",
-        ),
-        path(
-            "ses-configuration/check-production-status/",
-            SESConfigurationCheckProductionStatusView.as_view(),
-            name="ses-configuration-check-production-status",
         ),
         path(
             "projects/<int:project_pk>/domain/",

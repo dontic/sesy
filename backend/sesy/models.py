@@ -24,6 +24,15 @@ class SESConfiguration(SingletonModel):
         choices=PRODUCTION_STATUS_CHOICES,
         default=PRODUCTION_STATUS_UNKNOWN,
     )
+    max_sending_rate = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Max sending rate (emails/sec) retrieved from AWS SES",
+    )
+    config_valid = models.BooleanField(
+        default=False,
+        help_text="Indicates whether the AWS credentials are valid and reachable",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

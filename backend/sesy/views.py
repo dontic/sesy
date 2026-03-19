@@ -185,6 +185,46 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
         )
 
 
+def _sync_ses_config(config):
+    """
+    Calls AWS SES to validate credentials and refresh production_status and
+    max_sending_rate.  Updates and saves the config in-place.
+    """
+    if not config.aws_access_key_id:
+        config.config_valid = False
+        config.production_status = SESConfiguration.PRODUCTION_STATUS_UNKNOWN
+        config.max_sending_rate = None
+        config.save(update_fields=["config_valid", "production_status", "max_sending_rate"])
+        return
+
+    client = boto3.client(
+        "sesv2",
+        aws_access_key_id=config.aws_access_key_id,
+        aws_secret_access_key=config.aws_secret_access_key,
+        region_name=config.aws_region,
+    )
+    try:
+        response = client.get_account()
+        config.config_valid = True
+        config.production_status = (
+            SESConfiguration.PRODUCTION_STATUS_PRODUCTION
+            if response.get("ProductionAccessEnabled")
+            else SESConfiguration.PRODUCTION_STATUS_SANDBOX
+        )
+        send_quota = response.get("SendQuota", {})
+        config.max_sending_rate = send_quota.get("MaxSendRate")
+    except (BotoCoreError, ClientError):
+        config.config_valid = False
+        config.production_status = SESConfiguration.PRODUCTION_STATUS_UNKNOWN
+        config.max_sending_rate = None
+
+    update_fields = ["config_valid", "production_status", "max_sending_rate"]
+    if config.max_sending_rate is not None and config.sending_rate > config.max_sending_rate:
+        config.sending_rate = config.max_sending_rate
+        update_fields.append("sending_rate")
+    config.save(update_fields=update_fields)
+
+
 class SESConfigurationView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -194,6 +234,7 @@ class SESConfigurationView(APIView):
     )
     def get(self, request):
         config = SESConfiguration.get_solo()
+        _sync_ses_config(config)
         return Response(SESConfigurationSerializer(config).data)
 
     @extend_schema(
@@ -206,7 +247,8 @@ class SESConfigurationView(APIView):
         serializer = SESConfigurationSerializer(config, data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data)
+        _sync_ses_config(config)
+        return Response(SESConfigurationSerializer(config).data)
 
     @extend_schema(
         tags=["SES Configuration"],
@@ -215,38 +257,6 @@ class SESConfigurationView(APIView):
     def delete(self, request):
         SESConfiguration.objects.filter(pk=SESConfiguration.singleton_instance_id).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class SESConfigurationCheckProductionStatusView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    @extend_schema(
-        tags=["SES Configuration"],
-        request=None,
-        responses={200: SESConfigurationSerializer},
-    )
-    def post(self, request):
-        config = SESConfiguration.get_solo()
-        if not config.aws_access_key_id:
-            raise ValidationError({"detail": "SES configuration has not been set up."})
-
-        client = boto3.client(
-            "sesv2",
-            aws_access_key_id=config.aws_access_key_id,
-            aws_secret_access_key=config.aws_secret_access_key,
-            region_name=config.aws_region,
-        )
-        try:
-            response = client.get_account()
-        except (BotoCoreError, ClientError) as exc:
-            raise ValidationError({"detail": str(exc)})
-
-        if response.get("ProductionAccessEnabled"):
-            config.production_status = SESConfiguration.PRODUCTION_STATUS_PRODUCTION
-        else:
-            config.production_status = SESConfiguration.PRODUCTION_STATUS_SANDBOX
-        config.save(update_fields=["production_status"])
-        return Response(SESConfigurationSerializer(config).data)
 
 
 class ProjectDomainView(APIView):

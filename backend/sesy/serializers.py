@@ -170,10 +170,19 @@ class SESConfigurationSerializer(serializers.ModelSerializer):
             "aws_region",
             "sending_rate",
             "production_status",
+            "max_sending_rate",
+            "config_valid",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["pk", "production_status", "created_at", "updated_at"]
+        read_only_fields = [
+            "pk",
+            "production_status",
+            "max_sending_rate",
+            "config_valid",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class CampaignSerializer(serializers.ModelSerializer):
