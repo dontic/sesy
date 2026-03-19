@@ -159,7 +159,9 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class SESConfigurationSerializer(serializers.ModelSerializer):
-    aws_secret_access_key = serializers.CharField(write_only=True)
+    aws_secret_access_key = serializers.CharField(
+        write_only=True, required=False, allow_blank=True
+    )
 
     class Meta:
         model = SESConfiguration
@@ -183,6 +185,11 @@ class SESConfigurationSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+
+    def update(self, instance, validated_data):
+        if not validated_data.get("aws_secret_access_key"):
+            validated_data.pop("aws_secret_access_key", None)
+        return super().update(instance, validated_data)
 
 
 class CampaignSerializer(serializers.ModelSerializer):
