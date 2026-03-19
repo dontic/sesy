@@ -4,6 +4,7 @@ import { HomeIcon } from "lucide-react";
 import { NavMain } from "@/components/sidebar/nav-main";
 import { NavUser } from "@/components/sidebar/nav-user";
 import { NavHeader } from "@/components/sidebar/nav-header";
+import { ProjectSelector } from "@/components/sidebar/project-selector";
 
 import {
   Sidebar,
@@ -27,6 +28,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <NavHeader />
+        <ProjectSelector />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navData} />
