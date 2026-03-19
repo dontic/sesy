@@ -1,0 +1,178 @@
+name: sesy
+
+
+# Shared configuration for Django-based services (web, worker, beat).
+x-django-app: &django-app
+  restart: unless-stopped
+  image: dontic/sesy-backend:latest
+  environment: &django-env
+    DJANGO_SECRET_KEY: change-me
+    DOMAIN: sesy.mydomain.com
+    # Override these if connecting to an external PostgreSQL server.
+    # POSTGRES_DB_NAME: django
+    # POSTGRES_USER: django
+    # POSTGRES_PASSWORD: django
+    # POSTGRES_HOST: postgres
+    # POSTGRES_PORT: "5432"
+    # Override these if connecting to an external Redis server.
+    # REDIS_HOST: redis
+    # REDIS_PORT: "6379"
+    # REDIS_DB: 0
+  volumes:
+    - media:/app/backend/media
+    - django_static:/app/backend/django_static
+
+services:
+  # ---------------------------------------------------------------------------
+  # PostgreSQL — primary relational database.
+  # Comment out if using an external PostgreSQL server.
+  # ---------------------------------------------------------------------------
+  postgres:
+    restart: unless-stopped
+    image: postgres:16-bullseye
+    environment:
+      POSTGRES_DB: django
+      POSTGRES_USER: django
+      POSTGRES_PASSWORD: django
+    volumes:
+      - postgresdata:/var/lib/postgresql/data
+    # Uncomment to expose the port for external access (e.g. a DB GUI).
+    # ports:
+    #   - "5432:5432"
+
+  # ---------------------------------------------------------------------------
+  # Redis — cache backend and Celery message broker.
+  # Comment out if using an external Redis server.
+  # ---------------------------------------------------------------------------
+  redis:
+    restart: unless-stopped
+    image: redis:7.2.0-alpine
+    # Uncomment to expose the port for external access.
+    # ports:
+    #   - "6379:6379"
+
+  # ---------------------------------------------------------------------------
+  # Django — main application server (Gunicorn).
+  # Runs migrations and collectstatic on startup.
+  # ---------------------------------------------------------------------------
+  django:
+    <<: *django-app
+    entrypoint: /app/backend/docker/entrypoint-django.sh
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/ht/startup-probe/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # ---------------------------------------------------------------------------
+  # Celery Worker — processes background tasks.
+  # ---------------------------------------------------------------------------
+  worker:
+    <<: *django-app
+    entrypoint: /app/backend/docker/entrypoint-worker.sh
+    depends_on:
+      postgres:
+        condition: service_started
+      django:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # ---------------------------------------------------------------------------
+  # Celery Beat — schedules periodic tasks.
+  # ---------------------------------------------------------------------------
+  beat:
+    <<: *django-app
+    entrypoint: /app/backend/docker/entrypoint-beat.sh
+    depends_on:
+      postgres:
+        condition: service_started
+      django:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  # ---------------------------------------------------------------------------
+  # Frontend — React app served via 'serve'.
+  # ---------------------------------------------------------------------------
+  frontend:
+    restart: unless-stopped
+    image: dontic/sesy-frontend:latest
+    depends_on:
+      - django
+
+  # ---------------------------------------------------------------------------
+  # Nginx — reverse proxy. Routes / to the frontend and /api/ to Django.
+  # Config defined inline in the 'configs' section below.
+  # ---------------------------------------------------------------------------
+  nginx:
+    image: nginx:1.28
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - media:/app/backend/media:ro
+      - django_static:/app/backend/django_static:ro
+    configs:
+      - source: nginx_conf
+        target: /etc/nginx/nginx.conf
+    depends_on:
+      - django
+      - frontend
+
+
+# ---------------------------------------------------------------------------
+# Nginx configuration
+# ---------------------------------------------------------------------------
+configs:
+  nginx_conf:
+    content: |
+      events {}
+
+      http {
+          include /etc/nginx/mime.types;
+
+          server {
+              listen 80;
+
+              location / {
+                  proxy_pass http://frontend:3000;
+                  proxy_set_header Host $$host;
+                  proxy_set_header X-Real-IP $$remote_addr;
+                  proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $$scheme;
+              }
+
+              location /api/ {
+                  proxy_pass http://django:8000;
+                  proxy_set_header Host $$host;
+                  proxy_set_header X-Real-IP $$remote_addr;
+                  proxy_set_header X-Forwarded-For $$proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $$scheme;
+              }
+
+              location /static/ {
+                  alias /app/backend/django_static/;
+                  autoindex off;
+              }
+
+              location /media/ {
+                  alias /app/backend/media/;
+                  autoindex off;
+              }
+          }
+      }
+
+
+volumes:
+  postgresdata:
+  media:
+  django_static:

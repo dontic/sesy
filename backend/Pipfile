@@ -1,0 +1,39 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+django = "*"
+python-dotenv = "*"
+celery = "*"
+djangorestframework = "*"
+markdown = "*"
+redis = "*"
+django-celery-beat = "*"
+psycopg2 = "*"
+django-cors-headers = "*"
+gunicorn = "*"
+whitenoise = "*"
+drf-spectacular = "*"
+requests = "*"
+django-filter = "*"
+drf-nested-routers = "*"
+django-health-check = "*"
+django-cleanup = "*"
+pytz = "*"
+pillow = "*"
+django-solo = "*"
+boto3 = "*"
+dnspython = "*"
+
+[dev-packages]
+celery-types = "*"
+types-pytz = "*"
+types-jsonschema = "*"
+django-stubs = "*"
+django-types = "*"
+djangorestframework-types = "*"
+
+[requires]
+python_version = "3.11"
