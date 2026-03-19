@@ -8,7 +8,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import {
   Table,
@@ -16,12 +16,13 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
+  TableRow
 } from "@/components/ui/table";
 import CreateAudienceMemberDialog from "@/components/audience/CreateAudienceMemberDialog";
 import DeleteAudienceMemberDialog from "@/components/audience/DeleteAudienceMemberDialog";
 import EditAudienceMemberDialog from "@/components/audience/EditAudienceMemberDialog";
 import ImportCsvDialog from "@/components/audience/ImportCsvDialog";
+import ManageTagsDialog from "@/components/audience/ManageTagsDialog";
 import SideBarLayout from "@/layouts/SideBarLayout";
 import { sesyProjectsMembersList } from "@/api/django/audience-members/audience-members";
 import type { AudienceMember } from "@/api/django/djangoAPI.schemas";
@@ -35,10 +36,15 @@ const Audience = () => {
   const [count, setCount] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [editingMember, setEditingMember] = useState<AudienceMember | null>(null);
-  const [deletingMember, setDeletingMember] = useState<AudienceMember | null>(null);
+  const [editingMember, setEditingMember] = useState<AudienceMember | null>(
+    null
+  );
+  const [deletingMember, setDeletingMember] = useState<AudienceMember | null>(
+    null
+  );
   const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [manageTagsOpen, setManageTagsOpen] = useState(false);
 
   const totalPages = Math.ceil(count / PAGE_SIZE);
 
@@ -47,7 +53,7 @@ const Audience = () => {
     setLoading(true);
     sesyProjectsMembersList(String(currentProject.pk), {
       page,
-      page_size: PAGE_SIZE,
+      page_size: PAGE_SIZE
     })
       .then((res) => {
         setMembers(res.results);
@@ -73,7 +79,10 @@ const Audience = () => {
   const handleImported = () => {
     if (!currentProject) return;
     setLoading(true);
-    sesyProjectsMembersList(String(currentProject.pk), { page: 1, page_size: PAGE_SIZE })
+    sesyProjectsMembersList(String(currentProject.pk), {
+      page: 1,
+      page_size: PAGE_SIZE
+    })
       .then((res) => {
         setMembers(res.results);
         setCount(res.count);
@@ -90,7 +99,7 @@ const Audience = () => {
       </Button>
       <Button size="sm" onClick={() => setCreateOpen(true)}>
         <Plus className="h-4 w-4" />
-        Add Member
+        <span className="md:block hidden">Add Member</span>
       </Button>
     </>
   ) : null;
@@ -104,6 +113,21 @@ const Audience = () => {
               <TableHead>Email</TableHead>
               <TableHead>First Name</TableHead>
               <TableHead>Last Name</TableHead>
+              <TableHead>
+                <div className="flex items-center gap-1.5">
+                  Tags
+                  {currentProject && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-5 w-5"
+                      onClick={() => setManageTagsOpen(true)}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              </TableHead>
               <TableHead>Subscribed</TableHead>
               <TableHead>Created At</TableHead>
               <TableHead />
@@ -112,13 +136,19 @@ const Audience = () => {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell
+                  colSpan={7}
+                  className="text-center text-muted-foreground"
+                >
                   Loading...
                 </TableCell>
               </TableRow>
             ) : members.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell
+                  colSpan={7}
+                  className="text-center text-muted-foreground"
+                >
                   No audience members found.
                 </TableCell>
               </TableRow>
@@ -128,6 +158,19 @@ const Audience = () => {
                   <TableCell>{member.email}</TableCell>
                   <TableCell>{member.first_name ?? "—"}</TableCell>
                   <TableCell>{member.last_name ?? "—"}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {member.tags_detail.length > 0 ? (
+                        member.tags_detail.map((tag) => (
+                          <Badge key={tag.pk} variant="outline">
+                            {tag.name}
+                          </Badge>
+                        ))
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     {member.subscribed ? (
                       <Badge variant="default">Subscribed</Badge>
@@ -146,7 +189,9 @@ const Audience = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setEditingMember(member)}>
+                        <DropdownMenuItem
+                          onClick={() => setEditingMember(member)}
+                        >
                           <Pencil className="h-4 w-4" />
                           Edit
                         </DropdownMenuItem>
@@ -198,7 +243,9 @@ const Audience = () => {
           member={deletingMember}
           projectPk={String(currentProject.pk)}
           open={!!deletingMember}
-          onOpenChange={(open) => { if (!open) setDeletingMember(null); }}
+          onOpenChange={(open) => {
+            if (!open) setDeletingMember(null);
+          }}
           onDeleted={handleDeleted}
         />
       )}
@@ -208,7 +255,9 @@ const Audience = () => {
           member={editingMember}
           projectPk={String(currentProject.pk)}
           open={!!editingMember}
-          onOpenChange={(open) => { if (!open) setEditingMember(null); }}
+          onOpenChange={(open) => {
+            if (!open) setEditingMember(null);
+          }}
           onSaved={handleSaved}
         />
       )}
@@ -228,6 +277,14 @@ const Audience = () => {
           open={importOpen}
           onOpenChange={setImportOpen}
           onImported={handleImported}
+        />
+      )}
+
+      {currentProject && (
+        <ManageTagsDialog
+          projectPk={String(currentProject.pk)}
+          open={manageTagsOpen}
+          onOpenChange={setManageTagsOpen}
         />
       )}
     </SideBarLayout>

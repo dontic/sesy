@@ -10,11 +10,20 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  MultiSelect,
+  MultiSelectContent,
+  MultiSelectGroup,
+  MultiSelectItem,
+  MultiSelectTrigger,
+  MultiSelectValue,
+} from "@/components/ui/multi-select";
 import { Switch } from "@/components/ui/switch";
 import {
   sesyProjectsMembersUpdate,
 } from "@/api/django/audience-members/audience-members";
-import type { AudienceMember } from "@/api/django/djangoAPI.schemas";
+import { sesyProjectsTagsList } from "@/api/django/tags/tags";
+import type { AudienceMember, Tag } from "@/api/django/djangoAPI.schemas";
 
 interface Props {
   member: AudienceMember;
@@ -35,6 +44,10 @@ const EditAudienceMemberDialog = ({
   const [firstName, setFirstName] = useState(member.first_name ?? "");
   const [lastName, setLastName] = useState(member.last_name ?? "");
   const [subscribed, setSubscribed] = useState(member.subscribed ?? false);
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>(
+    (member.tags ?? []).map(String)
+  );
+  const [availableTags, setAvailableTags] = useState<Tag[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -42,7 +55,13 @@ const EditAudienceMemberDialog = ({
     setFirstName(member.first_name ?? "");
     setLastName(member.last_name ?? "");
     setSubscribed(member.subscribed ?? false);
+    setSelectedTagIds((member.tags ?? []).map(String));
   }, [member]);
+
+  useEffect(() => {
+    if (!open) return;
+    sesyProjectsTagsList(projectPk).then(setAvailableTags);
+  }, [open, projectPk]);
 
   const handleSave = () => {
     setSaving(true);
@@ -51,6 +70,7 @@ const EditAudienceMemberDialog = ({
       first_name: firstName,
       last_name: lastName,
       subscribed,
+      tags: selectedTagIds.map(Number),
     })
       .then((updated) => {
         onSaved(updated);
@@ -92,6 +112,27 @@ const EditAudienceMemberDialog = ({
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
             />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <Label>Tags</Label>
+            <MultiSelect
+              values={selectedTagIds}
+              onValuesChange={setSelectedTagIds}
+            >
+              <MultiSelectTrigger className="w-full">
+                <MultiSelectValue placeholder="Select tags..." />
+              </MultiSelectTrigger>
+              <MultiSelectContent search={{ placeholder: "Search tags...", emptyMessage: "No tags found." }}>
+                <MultiSelectGroup>
+                  {availableTags.map((tag) => (
+                    <MultiSelectItem key={tag.pk} value={String(tag.pk)}>
+                      {tag.name}
+                    </MultiSelectItem>
+                  ))}
+                </MultiSelectGroup>
+              </MultiSelectContent>
+            </MultiSelect>
           </div>
 
           <div className="flex items-center gap-3">
