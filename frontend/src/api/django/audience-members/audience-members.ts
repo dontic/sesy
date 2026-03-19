@@ -2,6 +2,8 @@
 import type {
   AudienceMember,
   AudienceMemberRequest,
+  PaginatedAudienceMemberList,
+  SesyProjectsMembersListParams,
 } from "../djangoAPI.schemas";
 
 import { customAxiosInstance } from "../../axios";
@@ -10,10 +12,13 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 export const sesyProjectsMembersList = (
   projectPk: string,
-  options?: SecondParameter<typeof customAxiosInstance<AudienceMember[]>>,
+  params?: SesyProjectsMembersListParams,
+  options?: SecondParameter<
+    typeof customAxiosInstance<PaginatedAudienceMemberList>
+  >,
 ) => {
-  return customAxiosInstance<AudienceMember[]>(
-    { url: `/sesy/projects/${projectPk}/members/`, method: "GET" },
+  return customAxiosInstance<PaginatedAudienceMemberList>(
+    { url: `/sesy/projects/${projectPk}/members/`, method: "GET", params },
     options,
   );
 };

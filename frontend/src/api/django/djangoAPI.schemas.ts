@@ -141,6 +141,15 @@ export const MailFromStatusEnum = {
   failed: "failed",
 } as const;
 
+export interface PaginatedAudienceMemberList {
+  count: number;
+  /** @nullable */
+  next?: string | null;
+  /** @nullable */
+  previous?: string | null;
+  results: AudienceMember[];
+}
+
 export interface PasswordChangeRequest {
   /** @minLength 1 */
   old_password: string;
@@ -289,3 +298,14 @@ export interface VerifiedDomainRequest {
    */
   domain: string;
 }
+
+export type SesyProjectsMembersListParams = {
+  /**
+   * A page number within the paginated result set.
+   */
+  page?: number;
+  /**
+   * Number of results to return per page.
+   */
+  page_size?: number;
+};
