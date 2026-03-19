@@ -269,7 +269,7 @@ class AudienceMember(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ["email"]
+        ordering = ["-created_at"]
         unique_together = [("project", "email")]
 
     def __str__(self):

@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema, extend_schema_view
@@ -78,6 +79,12 @@ class TagViewSet(viewsets.ModelViewSet):
         return context
 
 
+class AudienceMemberPagination(PageNumberPagination):
+    page_size = 50
+    page_size_query_param = "page_size"
+    max_page_size = 200
+
+
 @extend_schema_view(
     list=extend_schema(tags=["Audience Members"]),
     create=extend_schema(tags=["Audience Members"]),
@@ -88,6 +95,7 @@ class TagViewSet(viewsets.ModelViewSet):
 class AudienceMemberViewSet(viewsets.ModelViewSet):
     serializer_class = AudienceMemberSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = AudienceMemberPagination
     http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
 
     def _get_project(self):
