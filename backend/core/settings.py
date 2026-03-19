@@ -132,6 +132,11 @@ FRONTEND_URL = _ORIGIN
 
 # Hosts
 ALLOWED_HOSTS = [_DOMAIN]
+if _IS_LOCALHOST:
+    ALLOWED_HOSTS.append("django")
+    ALLOWED_HOSTS.append("localhost")
+    ALLOWED_HOSTS.append("127.0.0.1")
+    ALLOWED_HOSTS.append("0.0.0.0")
 
 # CSRF
 CSRF_TRUSTED_ORIGINS = [_ORIGIN]

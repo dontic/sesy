@@ -14,6 +14,7 @@ from .serializers import (
     LoginSerializer,
     PasswordChangeSerializer,
     UserSerializer,
+    UserUpdateSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -47,11 +48,18 @@ class LogoutView(APIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class SessionView(APIView):
+class MeView(APIView):
     permission_classes = (IsAuthenticated,)
 
     @extend_schema(responses={200: UserSerializer, 403: _detail_response})
     def get(self, request: Request) -> Response:
+        return Response(UserSerializer(request.user).data, status=status.HTTP_200_OK)
+
+    @extend_schema(request=UserUpdateSerializer, responses={200: UserSerializer})
+    def put(self, request: Request) -> Response:
+        serializer = UserUpdateSerializer(request.user, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(UserSerializer(request.user).data, status=status.HTTP_200_OK)
 
 
