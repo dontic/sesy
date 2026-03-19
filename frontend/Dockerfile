@@ -25,7 +25,6 @@ COPY index.html ./
 ARG VITE_APP_NAME=My App
 ARG VITE_API_BASE_URL=https://api.mydomain.com
 ARG VITE_API_TIMEOUT=30000
-ARG VITE_LANDING_PAGE_URL=http://mydomain.com
 
 # Build the app
 RUN npm run build
