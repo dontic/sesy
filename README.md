@@ -1,5 +1,17 @@
-# sesy
-Send and manage email campaigns easily with Sesy, an AWS SES wrapper.
+![Logo](./frontend/src/assets/logo.svg#gh-light-mode-only)
+![Logo Dark Mode](./frontend/src/assets/logo_dark.svg#gh-dark-mode-only)
+
+**Send and manage email campaigns easily with Sesy, an AWS SES wrapper.**
+
+![Hero image](./docs/hero.png)
+
+## Roadmap
+
+- [x] Configure AWS SES fully from the app
+- [x] Adding audience members via API
+- [ ] [Poka-Yoke] Prevent sending campaigns if the SES configuration or domain are not set and valid
+- [ ] Campaign statistics (SES Events webhook)
+- [ ] Batch audience member edits
 
 ## Getting started
 
