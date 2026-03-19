@@ -613,6 +613,39 @@ paths:
       responses:
         '204':
           description: No response body
+  /sesy/projects/{project_pk}/members/upload-csv/:
+    post:
+      operationId: sesy_projects_members_upload_csv_create
+      parameters:
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Members
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/AudienceMemberCsvUploadRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  created:
+                    type: integer
+                  skipped:
+                    type: integer
+                  total_rows:
+                    type: integer
+          description: ''
   /sesy/projects/{project_pk}/tags/:
     get:
       operationId: sesy_projects_tags_list
@@ -1016,6 +1049,14 @@ components:
       - pk
       - tags_detail
       - updated_at
+    AudienceMemberCsvUploadRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+      required:
+      - file
     AudienceMemberRequest:
       type: object
       properties:

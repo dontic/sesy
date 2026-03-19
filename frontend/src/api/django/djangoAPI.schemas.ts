@@ -14,6 +14,10 @@ export interface AudienceMember {
   readonly updated_at: string;
 }
 
+export interface AudienceMemberCsvUploadRequest {
+  file: Blob;
+}
+
 export interface AudienceMemberRequest {
   /**
    * @minLength 1
@@ -308,4 +312,10 @@ export type SesyProjectsMembersListParams = {
    * Number of results to return per page.
    */
   page_size?: number;
+};
+
+export type SesyProjectsMembersUploadCsvCreate200 = {
+  created?: number;
+  skipped?: number;
+  total_rows?: number;
 };

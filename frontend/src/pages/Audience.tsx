@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Plus, Trash2, Upload } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,8 +18,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import CreateAudienceMemberDialog from "@/components/audience/CreateAudienceMemberDialog";
 import DeleteAudienceMemberDialog from "@/components/audience/DeleteAudienceMemberDialog";
 import EditAudienceMemberDialog from "@/components/audience/EditAudienceMemberDialog";
+import ImportCsvDialog from "@/components/audience/ImportCsvDialog";
 import SideBarLayout from "@/layouts/SideBarLayout";
 import { sesyProjectsMembersList } from "@/api/django/audience-members/audience-members";
 import type { AudienceMember } from "@/api/django/djangoAPI.schemas";
@@ -35,6 +37,8 @@ const Audience = () => {
   const [loading, setLoading] = useState(false);
   const [editingMember, setEditingMember] = useState<AudienceMember | null>(null);
   const [deletingMember, setDeletingMember] = useState<AudienceMember | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
 
   const totalPages = Math.ceil(count / PAGE_SIZE);
 
@@ -61,8 +65,38 @@ const Audience = () => {
     setCount((c) => c - 1);
   };
 
+  const handleCreated = (member: AudienceMember) => {
+    setMembers((prev) => [member, ...prev]);
+    setCount((c) => c + 1);
+  };
+
+  const handleImported = () => {
+    if (!currentProject) return;
+    setLoading(true);
+    sesyProjectsMembersList(String(currentProject.pk), { page: 1, page_size: PAGE_SIZE })
+      .then((res) => {
+        setMembers(res.results);
+        setCount(res.count);
+        setPage(1);
+      })
+      .finally(() => setLoading(false));
+  };
+
+  const headerActions = currentProject ? (
+    <>
+      <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+        <Upload className="h-4 w-4" />
+        Import
+      </Button>
+      <Button size="sm" onClick={() => setCreateOpen(true)}>
+        <Plus className="h-4 w-4" />
+        Add Member
+      </Button>
+    </>
+  ) : null;
+
   return (
-    <SideBarLayout title="Audience">
+    <SideBarLayout title="Audience" actions={headerActions}>
       <div className="flex flex-col gap-4 items-center">
         <Table className="max-w-5xl">
           <TableHeader>
@@ -176,6 +210,24 @@ const Audience = () => {
           open={!!editingMember}
           onOpenChange={(open) => { if (!open) setEditingMember(null); }}
           onSaved={handleSaved}
+        />
+      )}
+
+      {currentProject && (
+        <CreateAudienceMemberDialog
+          projectPk={String(currentProject.pk)}
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+          onCreated={handleCreated}
+        />
+      )}
+
+      {currentProject && (
+        <ImportCsvDialog
+          projectPk={String(currentProject.pk)}
+          open={importOpen}
+          onOpenChange={setImportOpen}
+          onImported={handleImported}
         />
       )}
     </SideBarLayout>
