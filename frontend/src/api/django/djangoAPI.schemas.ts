@@ -204,8 +204,7 @@ export interface SESConfigurationRequest {
    * @maxLength 255
    */
   aws_access_key_id: string;
-  /** @minLength 1 */
-  aws_secret_access_key: string;
+  aws_secret_access_key?: string;
   /**
    * @minLength 1
    * @maxLength 50
@@ -261,6 +260,13 @@ export interface User {
 }
 
 export interface UserUpdateRequest {
+  /**
+   * Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+   * @minLength 1
+   * @maxLength 150
+   * @pattern ^[\w.@+-]+$
+   */
+  username: string;
   /** @maxLength 150 */
   first_name?: string;
   /** @maxLength 150 */
@@ -290,6 +296,8 @@ export interface VerifiedDomainRequest {
    */
   domain: string;
 }
+
+export type SesyProjectsDomainCreate400 = { [key: string]: unknown };
 
 export type SesyProjectsMembersListParams = {
   /**

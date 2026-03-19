@@ -76,6 +76,7 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/UserUpdateRequest'
+        required: true
       security:
       - cookieAuth: []
       responses:
@@ -434,6 +435,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/VerifiedDomain'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
     delete:
       operationId: sesy_projects_domain_destroy
       parameters:
@@ -449,26 +457,6 @@ paths:
       responses:
         '204':
           description: No response body
-  /sesy/projects/{project_pk}/domain/check/:
-    post:
-      operationId: sesy_projects_domain_check_create
-      parameters:
-      - in: path
-        name: project_pk
-        schema:
-          type: integer
-        required: true
-      tags:
-      - Verified Domains
-      security:
-      - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/VerifiedDomain'
-          description: ''
   /sesy/projects/{project_pk}/members/:
     get:
       operationId: sesy_projects_members_list
@@ -1223,7 +1211,6 @@ components:
         aws_secret_access_key:
           type: string
           writeOnly: true
-          minLength: 1
         aws_region:
           type: string
           minLength: 1
@@ -1234,7 +1221,6 @@ components:
           description: Max emails per second
       required:
       - aws_access_key_id
-      - aws_secret_access_key
     StatusA39Enum:
       enum:
       - pending
@@ -1319,12 +1305,21 @@ components:
     UserUpdateRequest:
       type: object
       properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
         first_name:
           type: string
           maxLength: 150
         last_name:
           type: string
           maxLength: 150
+      required:
+      - username
     VerifiedDomain:
       type: object
       properties:

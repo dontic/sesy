@@ -41,15 +41,6 @@ export const sesyProjectsDomainDestroy = (
     options,
   );
 };
-export const sesyProjectsDomainCheckCreate = (
-  projectPk: number,
-  options?: SecondParameter<typeof customAxiosInstance<VerifiedDomain>>,
-) => {
-  return customAxiosInstance<VerifiedDomain>(
-    { url: `/sesy/projects/${projectPk}/domain/check/`, method: "POST" },
-    options,
-  );
-};
 export type SesyProjectsDomainRetrieveResult = NonNullable<
   Awaited<ReturnType<typeof sesyProjectsDomainRetrieve>>
 >;
@@ -58,7 +49,4 @@ export type SesyProjectsDomainCreateResult = NonNullable<
 >;
 export type SesyProjectsDomainDestroyResult = NonNullable<
   Awaited<ReturnType<typeof sesyProjectsDomainDestroy>>
->;
-export type SesyProjectsDomainCheckCreateResult = NonNullable<
-  Awaited<ReturnType<typeof sesyProjectsDomainCheckCreate>>
 >;
