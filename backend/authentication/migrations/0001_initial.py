@@ -3,7 +3,20 @@
 import django.contrib.auth.models
 import django.contrib.auth.validators
 import django.utils.timezone
+from django.contrib.auth.hashers import make_password
 from django.db import migrations, models
+
+
+def create_superuser(apps, schema_editor):
+    User = apps.get_model('authentication', 'User')
+    if not User.objects.filter(username='admin').exists():
+        User.objects.create(
+            username='admin',
+            password=make_password('admin'),
+            is_superuser=True,
+            is_staff=True,
+            is_active=True,
+        )
 
 
 class Migration(migrations.Migration):
@@ -40,4 +53,5 @@ class Migration(migrations.Migration):
                 ('objects', django.contrib.auth.models.UserManager()),
             ],
         ),
+        migrations.RunPython(create_superuser, migrations.RunPython.noop),
     ]
