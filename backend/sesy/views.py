@@ -10,6 +10,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from .models import Project, Tag, AudienceMember, SESConfiguration, Campaign, VerifiedDomain
 from .serializers import (
@@ -275,11 +276,27 @@ class ProjectDomainView(APIView):
             instance = project.domain
         except VerifiedDomain.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        return Response(VerifiedDomainSerializer(instance).data)
+        dns_records, domain_status, mail_from_status = instance.check_dns()
+        instance.status = domain_status
+        instance.mail_from_status = mail_from_status
+        instance.last_checked_at = timezone.now()
+        instance.save(update_fields=["status", "mail_from_status", "last_checked_at"])
+        return Response(VerifiedDomainSerializer(instance, context={"dns_check_records": dns_records}).data)
 
-    @extend_schema(tags=["Verified Domains"], request=VerifiedDomainSerializer, responses={201: VerifiedDomainSerializer})
+    @extend_schema(
+        tags=["Verified Domains"],
+        request=VerifiedDomainSerializer,
+        responses={
+            201: VerifiedDomainSerializer,
+            400: OpenApiTypes.OBJECT,
+        },
+    )
     def post(self, request, project_pk):
         project = self._get_project(request, project_pk)
+
+        config = SESConfiguration.get_solo()
+        if not config.config_valid:
+            raise ValidationError({"detail": "SES configuration is not valid. Please configure and validate AWS SES credentials before adding a domain."})
 
         if VerifiedDomain.objects.filter(project=project).exists():
             raise ValidationError({"detail": "This project already has a verified domain."})
@@ -291,7 +308,6 @@ class ProjectDomainView(APIView):
         if VerifiedDomain.objects.filter(domain=domain).exists():
             raise ValidationError({"domain": "This domain is already registered."})
 
-        config = SESConfiguration.get_solo()
         client = _get_ses_client()
         mail_from_domain = f"sesy.{domain}"
         try:
@@ -313,7 +329,12 @@ class ProjectDomainView(APIView):
             mail_from_domain=mail_from_domain,
             aws_region=config.aws_region,
         )
-        return Response(VerifiedDomainSerializer(instance).data, status=status.HTTP_201_CREATED)
+        dns_records, domain_status, mail_from_status = instance.check_dns()
+        instance.status = domain_status
+        instance.mail_from_status = mail_from_status
+        instance.last_checked_at = timezone.now()
+        instance.save(update_fields=["status", "mail_from_status", "last_checked_at"])
+        return Response(VerifiedDomainSerializer(instance, context={"dns_check_records": dns_records}).data, status=status.HTTP_201_CREATED)
 
     @extend_schema(tags=["Verified Domains"], responses={204: None})
     def delete(self, request, project_pk):
@@ -330,26 +351,6 @@ class ProjectDomainView(APIView):
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-class ProjectDomainCheckView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    @extend_schema(tags=["Verified Domains"], request=None, responses={200: VerifiedDomainSerializer})
-    def post(self, request, project_pk):
-        project = Project.objects.filter(pk=project_pk, owner=request.user).first()
-        if not project:
-            raise PermissionDenied()
-        try:
-            instance = project.domain
-        except VerifiedDomain.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-
-        dns_records, domain_status, mail_from_status = instance.check_dns()
-        instance.status = domain_status
-        instance.mail_from_status = mail_from_status
-        instance.last_checked_at = timezone.now()
-        instance.save(update_fields=["status", "mail_from_status", "last_checked_at"])
-        return Response(VerifiedDomainSerializer(instance, context={"dns_check_records": dns_records}).data)
 
 
 @extend_schema_view(

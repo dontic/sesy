@@ -7,7 +7,6 @@ from .views import (
     SESConfigurationView,
     CampaignViewSet,
     ProjectDomainView,
-    ProjectDomainCheckView,
     UnsubscribeView,
 )
 
@@ -32,11 +31,6 @@ urlpatterns = (
             "projects/<int:project_pk>/domain/",
             ProjectDomainView.as_view(),
             name="project-domain",
-        ),
-        path(
-            "projects/<int:project_pk>/domain/check/",
-            ProjectDomainCheckView.as_view(),
-            name="project-domain-check",
         ),
         path(
             "projects/<int:project_pk>/unsubscribe/",
