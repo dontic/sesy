@@ -135,11 +135,10 @@ _ORIGIN = f"http://{_DOMAIN}:5173" if _IS_LOCALHOST else f"https://{_DOMAIN}"
 FRONTEND_URL = _ORIGIN
 
 # Hosts
-ALLOWED_HOSTS = [_DOMAIN]
+ALLOWED_HOSTS = [_DOMAIN, "127.0.0.1"]
 if _IS_LOCALHOST:
     ALLOWED_HOSTS.append("django")
     ALLOWED_HOSTS.append("localhost")
-    ALLOWED_HOSTS.append("127.0.0.1")
     ALLOWED_HOSTS.append("0.0.0.0")
 
 # CSRF
