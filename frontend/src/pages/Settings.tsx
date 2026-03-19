@@ -12,7 +12,18 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Copy, Check, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger
+} from "@/components/ui/alert-dialog";
 import {
   Form,
   FormControl,
@@ -33,14 +44,59 @@ import {
   sesySesConfigurationRetrieve,
   sesySesConfigurationUpdate
 } from "@/api/django/ses-configuration/ses-configuration";
-import type { SESConfiguration } from "@/api/django/djangoAPI.schemas";
+import {
+  sesyProjectsDomainRetrieve,
+  sesyProjectsDomainCreate,
+  sesyProjectsDomainDestroy
+} from "@/api/django/verified-domains/verified-domains";
+import type {
+  SESConfiguration,
+  VerifiedDomain
+} from "@/api/django/djangoAPI.schemas";
+import { useProjectStore } from "@/stores/ProjectStore";
+
+interface DnsRecord {
+  type: string;
+  name: string;
+  value: string;
+  priority?: number;
+  status: "present" | "missing";
+}
+
+const CopyButton = ({ text }: { text: string }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="ml-1 inline-flex items-center text-muted-foreground hover:text-foreground transition-colors"
+      type="button"
+      title="Copy"
+    >
+      {copied ? (
+        <Check className="h-3.5 w-3.5" />
+      ) : (
+        <Copy className="h-3.5 w-3.5" />
+      )}
+    </button>
+  );
+};
 
 const UserProfileSchema = z.object({
   username: z
     .string()
     .min(1, "Username is required")
     .max(150, "Username must be 150 characters or less")
-    .regex(/^[\w.@+-]+$/, "Enter a valid username. Letters, digits and @/./+/-/_ only."),
+    .regex(
+      /^[\w.@+-]+$/,
+      "Enter a valid username. Letters, digits and @/./+/-/_ only."
+    ),
   first_name: z.string().max(30, "First name must be 30 characters or less"),
   last_name: z.string().max(30, "Last name must be 30 characters or less")
 });
@@ -105,7 +161,9 @@ const ProfileTab = () => {
       passwordForm.reset();
       toast.success("Password changed successfully");
     } catch {
-      toast.error("Failed to change password. Please check your current password and try again.");
+      toast.error(
+        "Failed to change password. Please check your current password and try again."
+      );
     } finally {
       setIsChangingPassword(false);
     }
@@ -179,7 +237,10 @@ const ProfileTab = () => {
         </CardHeader>
         <CardContent>
           <Form {...passwordForm}>
-            <form onSubmit={passwordForm.handleSubmit(onChangePassword)} className="space-y-4">
+            <form
+              onSubmit={passwordForm.handleSubmit(onChangePassword)}
+              className="space-y-4"
+            >
               <FormField
                 control={passwordForm.control}
                 name="old_password"
@@ -248,13 +309,253 @@ type AwsSesValues = z.infer<typeof AwsSesSchema>;
 
 const productionStatusVariant = (
   status: SESConfiguration["production_status"]
-): "default" | "secondary" | "destructive" => {
-  if (status === "production") return "default";
-  if (status === "sandbox") return "secondary";
-  return "destructive";
+): "success" | "destructive" | "secondary" => {
+  if (status === "production") return "success";
+  if (status === "sandbox") return "destructive";
+  return "secondary";
+};
+
+const AddDomainSchema = z.object({
+  domain: z
+    .string()
+    .min(1, "Domain is required")
+    .max(255, "Must be 255 characters or less")
+});
+
+type AddDomainValues = z.infer<typeof AddDomainSchema>;
+
+const VerifiedDomainSection = ({
+  projectPk,
+  onDomainChange
+}: {
+  projectPk: number;
+  onDomainChange: (domain: VerifiedDomain | null) => void;
+}) => {
+  const [domain, setDomain] = useState<VerifiedDomain | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const form = useForm<AddDomainValues>({
+    resolver: zodResolver(AddDomainSchema),
+    defaultValues: { domain: "" }
+  });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await sesyProjectsDomainRetrieve(projectPk);
+        setDomain(data);
+        onDomainChange(data);
+      } catch {
+        setDomain(null);
+        onDomainChange(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, [projectPk, onDomainChange]);
+
+  const onSubmit = async (values: AddDomainValues) => {
+    setIsSubmitting(true);
+    try {
+      const data = await sesyProjectsDomainCreate(projectPk, {
+        domain: values.domain
+      });
+      setDomain(data);
+      onDomainChange(data);
+      toast.success("Domain added successfully");
+    } catch {
+      toast.error("Failed to add domain. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const onDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await sesyProjectsDomainDestroy(projectPk);
+      setDomain(null);
+      onDomainChange(null);
+      toast.success("Domain removed successfully");
+    } catch {
+      toast.error("Failed to remove domain. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (isLoading) return null;
+
+  const dnsRecords = domain
+    ? (domain.dns_records as unknown as DnsRecord[])
+    : [];
+  const hasMissingRecords = dnsRecords.some((r) => r.status === "missing");
+
+  return (
+    <Card className="w-full max-w-lg">
+      <CardHeader>
+        <CardTitle>Verified Domain</CardTitle>
+        <CardDescription>
+          Configure a sending domain to improve deliverability.
+          <br />
+          <br />
+          This is the domain of the current project. To see the domains of other
+          projects, please select the project in the project selector (top left)
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {!domain ? (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="domain"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Domain</FormLabel>
+                    <FormControl>
+                      <Input placeholder="example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="submit"
+                className="hover:cursor-pointer"
+                loading={isSubmitting}
+              >
+                Add Domain
+              </Button>
+            </form>
+          </Form>
+        ) : (
+          <>
+            <div className="flex items-center justify-between text-sm">
+              <p className="font-medium flex items-center gap-1">
+                {domain.domain}
+                <CopyButton text={domain.domain} />
+              </p>
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant={
+                    domain.status === "verified" ? "success" : "destructive"
+                  }
+                >
+                  {domain.status}
+                </Badge>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive hover:cursor-pointer"
+                      disabled={isDeleting}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remove domain?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will remove <strong>{domain.domain}</strong> from
+                        this project. You will need to re-add and re-verify it
+                        if you want to use it again.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={onDelete}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Remove
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+
+            {hasMissingRecords && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Some DNS records are missing. Please create the missing
+                  records in your domain registrar to complete verification.
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {dnsRecords.length > 0 && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <p className="text-sm font-medium">DNS Records</p>
+                  {dnsRecords.map((record, i) => (
+                    <div
+                      key={i}
+                      className="rounded-md border p-3 space-y-2 text-sm"
+                    >
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline">{record.type}</Badge>
+                        <Badge
+                          variant={
+                            record.status === "present"
+                              ? "success"
+                              : "destructive"
+                          }
+                        >
+                          {record.status}
+                        </Badge>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-muted-foreground text-xs">Name</p>
+                        <p className="font-mono text-xs break-all flex items-start gap-1">
+                          <span className="flex-1">
+                            {record.name.replace(`.${domain.domain}`, "")}
+                          </span>
+                          <CopyButton
+                            text={record.name.replace(`.${domain.domain}`, "")}
+                          />
+                        </p>
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-muted-foreground text-xs">Value</p>
+                        <p className="font-mono text-xs break-all flex items-start gap-1">
+                          <span className="flex-1">{record.value}</span>
+                          <CopyButton text={record.value} />
+                        </p>
+                      </div>
+                      {record.priority !== undefined && (
+                        <div className="space-y-1">
+                          <p className="text-muted-foreground text-xs">
+                            Priority
+                          </p>
+                          <p className="font-mono text-xs flex items-center gap-1">
+                            {record.priority}
+                            <CopyButton text={String(record.priority)} />
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
 };
 
 const AwsSesTab = () => {
+  const { currentProject } = useProjectStore();
   const [config, setConfig] = useState<SESConfiguration | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -314,148 +615,157 @@ const AwsSesTab = () => {
   };
 
   return (
-    <Card className="w-full max-w-lg">
-      <CardHeader>
-        <CardTitle>AWS SES Configuration</CardTitle>
-        <CardDescription>
-          Configure your Amazon Simple Email Service credentials and settings.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {!isLoading && config && (
-          <>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="space-y-1">
-                <p className="text-muted-foreground">Account status</p>
-                <Badge
-                  variant={productionStatusVariant(config.production_status)}
-                >
-                  {config.production_status}
-                </Badge>
-              </div>
-              <div className="space-y-1">
-                <p className="text-muted-foreground">Credentials</p>
-                <Badge
-                  variant={config.config_valid ? "default" : "destructive"}
-                >
-                  {config.config_valid ? "Valid" : "Invalid"}
-                </Badge>
-              </div>
-              {config.max_sending_rate !== null && (
+    <div className="space-y-6">
+      <Card className="w-full max-w-lg">
+        <CardHeader>
+          <CardTitle>AWS SES Configuration</CardTitle>
+          <CardDescription>
+            Configure your Amazon Simple Email Service credentials and settings.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {!isLoading && config && (
+            <>
+              <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="space-y-1">
-                  <p className="text-muted-foreground">Max sending rate</p>
-                  <p className="font-medium">
-                    {config.max_sending_rate} emails/sec
-                  </p>
+                  <p className="text-muted-foreground">Account status</p>
+                  <Badge
+                    variant={productionStatusVariant(config.production_status)}
+                  >
+                    {config.production_status}
+                  </Badge>
                 </div>
+                <div className="space-y-1">
+                  <p className="text-muted-foreground">Credentials</p>
+                  <Badge
+                    variant={config.config_valid ? "success" : "destructive"}
+                  >
+                    {config.config_valid ? "Valid" : "Invalid"}
+                  </Badge>
+                </div>
+                {config.max_sending_rate !== null && (
+                  <div className="space-y-1">
+                    <p className="text-muted-foreground">Max sending rate</p>
+                    <p className="font-medium">
+                      {config.max_sending_rate} emails/sec
+                    </p>
+                  </div>
+                )}
+              </div>
+              {config.production_status === "sandbox" && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <span>
+                      Your AWS SES account is in <strong>sandbox</strong> mode.
+                      <br />
+                      You will need to move the account to production before
+                      being able to send campaigns.
+                    </span>
+                  </AlertDescription>
+                </Alert>
               )}
-            </div>
-            {config.production_status === "sandbox" && (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  <span>
-                    Your AWS SES account is in <strong>sandbox</strong> mode.
-                    <br />
-                    You will need to move the account to production before being
-                    able to send campaigns.
-                  </span>
-                </AlertDescription>
-              </Alert>
-            )}
-            <Separator />
-          </>
-        )}
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="aws_access_key_id"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Access Key ID</FormLabel>
-                  <FormControl>
-                    <Input placeholder="AKIAIOSFODNN7EXAMPLE" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="aws_secret_access_key"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Secret Access Key</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="password"
-                      placeholder={
-                        config ? "Leave blank to keep existing key" : ""
-                      }
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    {config
-                      ? "Only fill this in if you want to update the secret key."
-                      : "Your AWS secret access key."}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="aws_region"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>AWS Region</FormLabel>
-                  <FormControl>
-                    <Input placeholder="us-east-1" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="sending_rate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Sending Rate</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.1"
-                      placeholder="14"
-                      value={field.value ?? ""}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value === ""
-                            ? undefined
-                            : parseFloat(e.target.value)
-                        )
-                      }
-                    />
-                  </FormControl>
-                  <FormDescription>Max emails per second.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button
-              type="submit"
-              className="hover:cursor-pointer"
-              loading={isSubmitting}
-              disabled={isLoading}
-            >
-              Save Changes
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+              <Separator />
+            </>
+          )}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="aws_access_key_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Access Key ID</FormLabel>
+                    <FormControl>
+                      <Input placeholder="AKIAIOSFODNN7EXAMPLE" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="aws_secret_access_key"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Secret Access Key</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder={
+                          config ? "Leave blank to keep existing key" : ""
+                        }
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {config
+                        ? "Only fill this in if you want to update the secret key."
+                        : "Your AWS secret access key."}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="aws_region"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>AWS Region</FormLabel>
+                    <FormControl>
+                      <Input placeholder="us-east-1" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="sending_rate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sending Rate</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        placeholder="14"
+                        value={field.value ?? ""}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value === ""
+                              ? undefined
+                              : parseFloat(e.target.value)
+                          )
+                        }
+                      />
+                    </FormControl>
+                    <FormDescription>Max emails per second.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="submit"
+                className="hover:cursor-pointer"
+                loading={isSubmitting}
+                disabled={isLoading}
+              >
+                Save Changes
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      {!isLoading && config?.config_valid && currentProject && (
+        <VerifiedDomainSection
+          projectPk={currentProject.pk}
+          onDomainChange={() => {}}
+        />
+      )}
+    </div>
   );
 };
 
@@ -480,7 +790,7 @@ const Settings = () => {
   return (
     <SideBarLayout title="Settings">
       <div className="flex w-full justify-center overflow-y-auto py-6">
-        <div className="w-full max-w-lg">
+        <div className="w-full max-w-2xl">
           <Tabs defaultValue="profile">
             <TabsList className="mb-6">
               <TabsTrigger value="profile">Profile</TabsTrigger>
