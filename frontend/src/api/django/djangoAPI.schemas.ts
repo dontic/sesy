@@ -187,6 +187,13 @@ export interface SESConfiguration {
   /** Max emails per second */
   sending_rate?: number;
   readonly production_status: ProductionStatusEnum;
+  /**
+   * Max sending rate (emails/sec) retrieved from AWS SES
+   * @nullable
+   */
+  readonly max_sending_rate: number | null;
+  /** Indicates whether the AWS credentials are valid and reachable */
+  readonly config_valid: boolean;
   readonly created_at: string;
   readonly updated_at: string;
 }

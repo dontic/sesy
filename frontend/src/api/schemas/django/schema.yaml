@@ -857,20 +857,6 @@ paths:
       responses:
         '204':
           description: No response body
-  /sesy/ses-configuration/check-production-status/:
-    post:
-      operationId: sesy_ses_configuration_check_production_status_create
-      tags:
-      - SES Configuration
-      security:
-      - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/SESConfiguration'
-          description: ''
 components:
   schemas:
     AudienceMember:
@@ -1201,6 +1187,16 @@ components:
           allOf:
           - $ref: '#/components/schemas/ProductionStatusEnum'
           readOnly: true
+        max_sending_rate:
+          type: number
+          format: double
+          readOnly: true
+          nullable: true
+          description: Max sending rate (emails/sec) retrieved from AWS SES
+        config_valid:
+          type: boolean
+          readOnly: true
+          description: Indicates whether the AWS credentials are valid and reachable
         created_at:
           type: string
           format: date-time
@@ -1211,7 +1207,9 @@ components:
           readOnly: true
       required:
       - aws_access_key_id
+      - config_valid
       - created_at
+      - max_sending_rate
       - pk
       - production_status
       - updated_at

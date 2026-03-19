@@ -38,14 +38,6 @@ export const sesySesConfigurationDestroy = (
     options,
   );
 };
-export const sesySesConfigurationCheckProductionStatusCreate = (
-  options?: SecondParameter<typeof customAxiosInstance<SESConfiguration>>,
-) => {
-  return customAxiosInstance<SESConfiguration>(
-    { url: `/sesy/ses-configuration/check-production-status/`, method: "POST" },
-    options,
-  );
-};
 export type SesySesConfigurationRetrieveResult = NonNullable<
   Awaited<ReturnType<typeof sesySesConfigurationRetrieve>>
 >;
@@ -54,7 +46,4 @@ export type SesySesConfigurationUpdateResult = NonNullable<
 >;
 export type SesySesConfigurationDestroyResult = NonNullable<
   Awaited<ReturnType<typeof sesySesConfigurationDestroy>>
->;
-export type SesySesConfigurationCheckProductionStatusCreateResult = NonNullable<
-  Awaited<ReturnType<typeof sesySesConfigurationCheckProductionStatusCreate>>
 >;

@@ -9,20 +9,31 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormLabel,
+  FormDescription,
   FormMessage
 } from "@/components/ui/form";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useUserStore } from "@/stores/UserStore";
 import { authMeUpdate } from "@/api/django/auth/auth";
+import {
+  sesySesConfigurationRetrieve,
+  sesySesConfigurationUpdate
+} from "@/api/django/ses-configuration/ses-configuration";
+import type { SESConfiguration } from "@/api/django/djangoAPI.schemas";
 
 const UserProfileSchema = z.object({
   first_name: z.string().max(30, "First name must be 30 characters or less"),
@@ -31,7 +42,7 @@ const UserProfileSchema = z.object({
 
 type UserProfileValues = z.infer<typeof UserProfileSchema>;
 
-const Settings = () => {
+const ProfileTab = () => {
   const { user, setUser } = useUserStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -63,49 +74,318 @@ const Settings = () => {
   };
 
   return (
+    <Card className="w-full max-w-lg">
+      <CardHeader>
+        <CardTitle>Profile Information</CardTitle>
+        <CardDescription>Update your first and last name.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="first_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>First Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="John" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="last_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button
+              type="submit"
+              className="hover:cursor-pointer"
+              loading={isSubmitting}
+            >
+              Save Changes
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+};
+
+const AwsSesSchema = z.object({
+  aws_access_key_id: z
+    .string()
+    .min(1, "Access Key ID is required")
+    .max(255, "Must be 255 characters or less"),
+  aws_secret_access_key: z.string().optional(),
+  aws_region: z.string().max(50, "Must be 50 characters or less").optional(),
+  sending_rate: z.number().positive("Must be a positive number").optional()
+});
+
+type AwsSesValues = z.infer<typeof AwsSesSchema>;
+
+const productionStatusVariant = (
+  status: SESConfiguration["production_status"]
+): "default" | "secondary" | "destructive" => {
+  if (status === "production") return "default";
+  if (status === "sandbox") return "secondary";
+  return "destructive";
+};
+
+const AwsSesTab = () => {
+  const [config, setConfig] = useState<SESConfiguration | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const form = useForm<AwsSesValues>({
+    resolver: zodResolver(AwsSesSchema),
+    defaultValues: {
+      aws_access_key_id: "",
+      aws_secret_access_key: "",
+      aws_region: "",
+      sending_rate: undefined
+    }
+  });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await sesySesConfigurationRetrieve();
+        setConfig(data);
+        form.reset({
+          aws_access_key_id: data.aws_access_key_id ?? "",
+          aws_secret_access_key: "",
+          aws_region: data.aws_region ?? "",
+          sending_rate: data.sending_rate ?? undefined
+        });
+      } catch {
+        // No config yet — leave form at defaults
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, [form]);
+
+  const onSubmit = async (values: AwsSesValues) => {
+    setIsSubmitting(true);
+    try {
+      const updated = await sesySesConfigurationUpdate({
+        aws_access_key_id: values.aws_access_key_id,
+        // Only send secret if filled in; cast needed because codegen marks it required despite schema
+        ...(values.aws_secret_access_key
+          ? { aws_secret_access_key: values.aws_secret_access_key }
+          : {}),
+        ...(values.aws_region ? { aws_region: values.aws_region } : {}),
+        ...(values.sending_rate !== undefined
+          ? { sending_rate: values.sending_rate }
+          : {})
+      } as Parameters<typeof sesySesConfigurationUpdate>[0]);
+      setConfig(updated);
+      form.setValue("aws_secret_access_key", "");
+      toast.success("AWS SES configuration saved");
+    } catch {
+      toast.error("Failed to save configuration. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Card className="w-full max-w-lg">
+      <CardHeader>
+        <CardTitle>AWS SES Configuration</CardTitle>
+        <CardDescription>
+          Configure your Amazon Simple Email Service credentials and settings.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {!isLoading && config && (
+          <>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="space-y-1">
+                <p className="text-muted-foreground">Account status</p>
+                <Badge
+                  variant={productionStatusVariant(config.production_status)}
+                >
+                  {config.production_status}
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                <p className="text-muted-foreground">Credentials</p>
+                <Badge
+                  variant={config.config_valid ? "default" : "destructive"}
+                >
+                  {config.config_valid ? "Valid" : "Invalid"}
+                </Badge>
+              </div>
+              {config.max_sending_rate !== null && (
+                <div className="space-y-1">
+                  <p className="text-muted-foreground">Max sending rate</p>
+                  <p className="font-medium">
+                    {config.max_sending_rate} emails/sec
+                  </p>
+                </div>
+              )}
+            </div>
+            {config.production_status === "sandbox" && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  <span>
+                    Your AWS SES account is in <strong>sandbox</strong> mode.
+                    <br />
+                    You will need to move the account to production before being
+                    able to send campaigns.
+                  </span>
+                </AlertDescription>
+              </Alert>
+            )}
+            <Separator />
+          </>
+        )}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="aws_access_key_id"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Access Key ID</FormLabel>
+                  <FormControl>
+                    <Input placeholder="AKIAIOSFODNN7EXAMPLE" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="aws_secret_access_key"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Secret Access Key</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="password"
+                      placeholder={
+                        config ? "Leave blank to keep existing key" : ""
+                      }
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {config
+                      ? "Only fill this in if you want to update the secret key."
+                      : "Your AWS secret access key."}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="aws_region"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>AWS Region</FormLabel>
+                  <FormControl>
+                    <Input placeholder="us-east-1" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="sending_rate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Sending Rate</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      placeholder="14"
+                      value={field.value ?? ""}
+                      onChange={(e) =>
+                        field.onChange(
+                          e.target.value === ""
+                            ? undefined
+                            : parseFloat(e.target.value)
+                        )
+                      }
+                    />
+                  </FormControl>
+                  <FormDescription>Max emails per second.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button
+              type="submit"
+              className="hover:cursor-pointer"
+              loading={isSubmitting}
+              disabled={isLoading}
+            >
+              Save Changes
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
+  );
+};
+
+const UsersTab = () => {
+  return (
+    <Card className="w-full max-w-lg">
+      <CardHeader>
+        <CardTitle>Users</CardTitle>
+        <CardDescription>
+          Manage users who have access to this project.
+          <br />
+          <br />
+          This feature will be available soon.
+        </CardDescription>
+      </CardHeader>
+      <CardContent />
+    </Card>
+  );
+};
+
+const Settings = () => {
+  return (
     <SideBarLayout title="Settings">
       <div className="flex w-full justify-center overflow-y-auto py-6">
-        <Card className="w-full max-w-lg">
-          <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
-            <CardDescription>Update your first and last name.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="first_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>First Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="John" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="last_name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Doe" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="hover:cursor-pointer" loading={isSubmitting}>
-                  Save Changes
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+        <div className="w-full max-w-lg">
+          <Tabs defaultValue="profile">
+            <TabsList className="mb-6">
+              <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsTrigger value="aws-ses">AWS SES</TabsTrigger>
+              <TabsTrigger value="users">Users</TabsTrigger>
+            </TabsList>
+            <TabsContent value="profile">
+              <ProfileTab />
+            </TabsContent>
+            <TabsContent value="aws-ses">
+              <AwsSesTab />
+            </TabsContent>
+            <TabsContent value="users">
+              <UsersTab />
+            </TabsContent>
+          </Tabs>
+        </div>
       </div>
     </SideBarLayout>
   );
