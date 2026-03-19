@@ -13,6 +13,7 @@
 
 - [x] Configure AWS SES fully from the app
 - [x] Adding audience members via API
+- [ ] Onboarding flow on first deployment
 - [ ] [Poka-Yoke] Prevent sending campaigns if the SES configuration or domain are not set and valid
 - [ ] Campaign statistics (SES Events webhook)
 - [ ] Batch audience member edits
