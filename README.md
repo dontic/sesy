@@ -5,6 +5,8 @@
 
 **Send and manage email campaigns easily with Sesy, an AWS SES wrapper.**
 
+> ⚠️ This tool is still in beta!
+
 ![Hero image](./docs/hero.png)
 
 ## Roadmap
