@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Copy, Check, Trash2 } from "lucide-react";
+import { AlertTriangle, Copy, Check, Trash2, RefreshCw } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,6 +54,8 @@ import type {
   VerifiedDomain
 } from "@/api/django/djangoAPI.schemas";
 import { useProjectStore } from "@/stores/ProjectStore";
+import { sesyApiKeyRetrieve, sesyApiKeyCreate } from "@/api/django/api-key/api-key";
+import type { ApiKey } from "@/api/django/djangoAPI.schemas";
 
 interface DnsRecord {
   type: string;
@@ -786,6 +788,247 @@ const UsersTab = () => {
   );
 };
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+
+const ApiDocsSection = ({ apiKey }: { apiKey: ApiKey | null }) => {
+  const exampleKey = apiKey?.key ?? "<your-api-key>";
+  const exampleBody = JSON.stringify(
+    {
+      project_pk: 1,
+      email: "user@example.com",
+      first_name: "Jane",
+      last_name: "Doe",
+      subscribed: true,
+      tags: ["newsletter", "vip"]
+    },
+    null,
+    2
+  );
+  const curlExample = `curl -X POST ${API_BASE_URL}/sesy/public/members/ \\
+  -H "Content-Type: application/json" \\
+  -H "X-API-Key: ${exampleKey}" \\
+  -d '${JSON.stringify({ project_pk: 1, email: "user@example.com" })}'`;
+
+  return (
+    <Card className="w-full max-w-lg">
+      <CardHeader>
+        <CardTitle>API Reference</CardTitle>
+        <CardDescription>
+          Use the public API to programmatically add audience members.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6 text-sm">
+        {/* Endpoint */}
+        <div className="space-y-2">
+          <p className="font-medium">Add Audience Member</p>
+          <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2 font-mono text-xs">
+            <Badge variant="outline" className="shrink-0">POST</Badge>
+            <span className="break-all">{API_BASE_URL}/sesy/public/members/</span>
+            <CopyButton text={`${API_BASE_URL}/sesy/public/members/`} />
+          </div>
+          <p className="text-muted-foreground text-xs">
+            Creates an audience member in a project. Tags are created
+            automatically if they don't exist.
+          </p>
+        </div>
+
+        <Separator />
+
+        {/* Authentication */}
+        <div className="space-y-2">
+          <p className="font-medium">Authentication</p>
+          <div className="rounded-md border bg-muted px-3 py-2 font-mono text-xs flex items-start gap-1">
+            <span className="flex-1 break-all">X-API-Key: {exampleKey}</span>
+            <CopyButton text={`X-API-Key: ${exampleKey}`} />
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Request body */}
+        <div className="space-y-2">
+          <p className="font-medium">Request Body</p>
+          <div className="rounded-md border overflow-hidden text-xs">
+            <table className="w-full">
+              <thead className="bg-muted">
+                <tr>
+                  <th className="text-left px-3 py-2 font-medium">Field</th>
+                  <th className="text-left px-3 py-2 font-medium">Type</th>
+                  <th className="text-left px-3 py-2 font-medium">Required</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {[
+                  { field: "project_pk", type: "integer", required: true },
+                  { field: "email", type: "string (email)", required: true },
+                  { field: "first_name", type: "string", required: false },
+                  { field: "last_name", type: "string", required: false },
+                  { field: "subscribed", type: "boolean", required: false },
+                  { field: "tags", type: "string[]", required: false }
+                ].map(({ field, type, required }) => (
+                  <tr key={field}>
+                    <td className="px-3 py-2 font-mono">{field}</td>
+                    <td className="px-3 py-2 text-muted-foreground">{type}</td>
+                    <td className="px-3 py-2">
+                      {required ? (
+                        <Badge variant="secondary" className="text-xs">required</Badge>
+                      ) : (
+                        <span className="text-muted-foreground">optional</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Example */}
+        <div className="space-y-2">
+          <p className="font-medium">Example Request Body</p>
+          <div className="relative rounded-md border bg-muted p-3 font-mono text-xs">
+            <pre className="overflow-x-auto whitespace-pre-wrap break-all">
+              {exampleBody}
+            </pre>
+            <span className="absolute top-2 right-2">
+              <CopyButton text={exampleBody} />
+            </span>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* cURL */}
+        <div className="space-y-2">
+          <p className="font-medium">cURL Example</p>
+          <div className="relative rounded-md border bg-muted p-3 font-mono text-xs">
+            <pre className="overflow-x-auto whitespace-pre-wrap break-all">
+              {curlExample}
+            </pre>
+            <span className="absolute top-2 right-2">
+              <CopyButton text={curlExample} />
+            </span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+const ApiTab = () => {
+  const [apiKey, setApiKey] = useState<ApiKey | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await sesyApiKeyRetrieve();
+        setApiKey(data);
+      } catch {
+        setApiKey(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    try {
+      const data = await sesyApiKeyCreate();
+      setApiKey(data);
+      toast.success(apiKey ? "API key regenerated" : "API key generated");
+    } catch {
+      toast.error("Failed to generate API key. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+    <Card className="w-full max-w-lg">
+      <CardHeader>
+        <CardTitle>API Key</CardTitle>
+        <CardDescription>
+          Use this key to authenticate requests to the Sesy API.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {!isLoading && apiKey && (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">Your API key</p>
+            <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2">
+              <code className="flex-1 text-xs font-mono break-all select-all">
+                {apiKey.key}
+              </code>
+              <CopyButton text={apiKey.key} />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Last generated:{" "}
+              {new Date(apiKey.updated_at).toLocaleDateString()}
+            </p>
+          </div>
+        )}
+        {!isLoading && !apiKey && (
+          <p className="text-sm text-muted-foreground">
+            No API key yet. Generate one to get started.
+          </p>
+        )}
+        {apiKey ? (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="hover:cursor-pointer"
+                loading={isGenerating}
+                disabled={isLoading}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Regenerate API Key
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Regenerate API key?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will invalidate your existing API key. Any integrations
+                  using the current key will stop working immediately.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleGenerate}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Regenerate
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        ) : (
+          <Button
+            className="hover:cursor-pointer"
+            loading={isGenerating}
+            disabled={isLoading}
+            onClick={handleGenerate}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Generate API Key
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+    <ApiDocsSection apiKey={apiKey} />
+    </div>
+  );
+};
+
 const Settings = () => {
   return (
     <SideBarLayout title="Settings">
@@ -796,6 +1039,7 @@ const Settings = () => {
               <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="aws-ses">AWS SES</TabsTrigger>
               <TabsTrigger value="users">Users</TabsTrigger>
+              <TabsTrigger value="api">API</TabsTrigger>
             </TabsList>
             <TabsContent value="profile">
               <ProfileTab />
@@ -805,6 +1049,9 @@ const Settings = () => {
             </TabsContent>
             <TabsContent value="users">
               <UsersTab />
+            </TabsContent>
+            <TabsContent value="api">
+              <ApiTab />
             </TabsContent>
           </Tabs>
         </div>

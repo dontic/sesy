@@ -1,4 +1,11 @@
 // @ts-nocheck
+export interface ApiKey {
+  readonly pk: number;
+  readonly key: string;
+  readonly created_at: string;
+  readonly updated_at: string;
+}
+
 export interface AudienceMember {
   readonly pk: number;
   /** @maxLength 254 */
@@ -178,6 +185,18 @@ export interface ProjectRequest {
   description?: string;
 }
 
+export interface PublicAudienceMemberRequest {
+  project_pk: number;
+  /** @minLength 1 */
+  email: string;
+  /** @maxLength 150 */
+  first_name?: string;
+  /** @maxLength 150 */
+  last_name?: string;
+  subscribed?: boolean;
+  tags?: string[];
+}
+
 export interface SESConfiguration {
   readonly pk: number;
   /** @maxLength 255 */
@@ -315,3 +334,9 @@ export type SesyProjectsMembersUploadCsvCreate200 = {
   skipped?: number;
   total_rows?: number;
 };
+
+export type SesyPublicMembersCreate400 = { [key: string]: unknown };
+
+export type SesyPublicMembersCreate401 = { [key: string]: unknown };
+
+export type SesyPublicMembersCreate404 = { [key: string]: unknown };

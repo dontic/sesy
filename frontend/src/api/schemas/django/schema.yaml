@@ -118,6 +118,36 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
+  /sesy/api-key/:
+    get:
+      operationId: sesy_api_key_retrieve
+      tags:
+      - API Key
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKey'
+          description: ''
+        '404':
+          description: No response body
+    post:
+      operationId: sesy_api_key_create
+      description: Create an API key if none exists, or regenerate the existing one.
+      tags:
+      - API Key
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKey'
+          description: ''
   /sesy/projects/:
     get:
       operationId: sesy_projects_list
@@ -797,6 +827,62 @@ paths:
       responses:
         '200':
           description: No response body
+  /sesy/public/members/:
+    post:
+      operationId: sesy_public_members_create
+      description: Create an audience member in a project. Tags are created automatically
+        if they don't exist.
+      parameters:
+      - in: header
+        name: X-API-Key
+        schema:
+          type: string
+        description: Your API key
+        required: true
+      tags:
+      - Public API
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicAudienceMemberRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PublicAudienceMemberRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PublicAudienceMemberRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudienceMember'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
   /sesy/ses-configuration/:
     get:
       operationId: sesy_ses_configuration_retrieve
@@ -847,6 +933,29 @@ paths:
           description: No response body
 components:
   schemas:
+    ApiKey:
+      type: object
+      properties:
+        pk:
+          type: integer
+          readOnly: true
+          title: ID
+        key:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - key
+      - pk
+      - updated_at
     AudienceMember:
       type: object
       properties:
@@ -1154,6 +1263,35 @@ components:
           type: string
       required:
       - name
+    PublicAudienceMemberRequest:
+      type: object
+      properties:
+        project_pk:
+          type: integer
+        email:
+          type: string
+          format: email
+          minLength: 1
+        first_name:
+          type: string
+          default: ''
+          maxLength: 150
+        last_name:
+          type: string
+          default: ''
+          maxLength: 150
+        subscribed:
+          type: boolean
+          default: true
+        tags:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 100
+      required:
+      - email
+      - project_pk
     SESConfiguration:
       type: object
       properties:
