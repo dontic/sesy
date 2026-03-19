@@ -42,7 +42,7 @@ def send_campaign_task(campaign_pk: int) -> None:
     from .models import AudienceMember, Campaign, SESConfiguration
 
     campaign = (
-        Campaign.objects.select_related("project", "template")
+        Campaign.objects.select_related("project")
         .prefetch_related("tags")
         .get(pk=campaign_pk)
     )
@@ -81,11 +81,11 @@ def send_campaign_task(campaign_pk: int) -> None:
             if i > 0 and ses_config.sending_rate > 0:
                 time.sleep(1.0 / ses_config.sending_rate)
 
-            html = campaign.template.html_body.replace(
+            html = campaign.html_body.replace(
                 "{{first_name}}", member.first_name
             ).replace("{{last_name}}", member.last_name)
 
-            subject = campaign.template.subject.replace(
+            subject = campaign.subject.replace(
                 "{{first_name}}", member.first_name
             ).replace("{{last_name}}", member.last_name)
 

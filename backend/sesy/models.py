@@ -276,28 +276,6 @@ class AudienceMember(models.Model):
         return f"{self.email} ({self.project.name})"
 
 
-class EmailTemplate(models.Model):
-    project = models.ForeignKey(
-        Project,
-        on_delete=models.CASCADE,
-        related_name="email_templates",
-    )
-    name = models.CharField(max_length=255)
-    subject = models.CharField(max_length=998)
-    html_body = models.TextField(
-        help_text="HTML body. Use {{first_name}} and {{last_name}} for personalization."
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ["-created_at"]
-        unique_together = [("project", "name")]
-
-    def __str__(self):
-        return f"{self.name} ({self.project.name})"
-
-
 class Campaign(models.Model):
     STATUS_DRAFT = "draft"
     STATUS_SENDING = "sending"
@@ -318,10 +296,9 @@ class Campaign(models.Model):
     name = models.CharField(max_length=255)
     from_email = models.EmailField()
     from_name = models.CharField(max_length=255, blank=True)
-    template = models.ForeignKey(
-        EmailTemplate,
-        on_delete=models.PROTECT,
-        related_name="campaigns",
+    subject = models.CharField(max_length=998)
+    html_body = models.TextField(
+        help_text="HTML body. Use {{first_name}} and {{last_name}} for personalization."
     )
     send_to_all = models.BooleanField(
         default=True,

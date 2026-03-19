@@ -11,14 +11,13 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from .models import Project, Tag, AudienceMember, SESConfiguration, EmailTemplate, Campaign, VerifiedDomain
+from .models import Project, Tag, AudienceMember, SESConfiguration, Campaign, VerifiedDomain
 from .serializers import (
     ProjectSerializer,
     TagSerializer,
     AudienceMemberSerializer,
     AudienceMemberCsvUploadSerializer,
     SESConfigurationSerializer,
-    EmailTemplateSerializer,
     CampaignSerializer,
     VerifiedDomainSerializer,
     UnsubscribeSerializer,
@@ -341,36 +340,6 @@ class ProjectDomainCheckView(APIView):
         instance.last_checked_at = timezone.now()
         instance.save(update_fields=["status", "mail_from_status", "last_checked_at"])
         return Response(VerifiedDomainSerializer(instance, context={"dns_check_records": dns_records}).data)
-
-
-@extend_schema_view(
-    list=extend_schema(tags=["Email Templates"]),
-    create=extend_schema(tags=["Email Templates"]),
-    retrieve=extend_schema(tags=["Email Templates"]),
-    update=extend_schema(tags=["Email Templates"]),
-    destroy=extend_schema(tags=["Email Templates"]),
-)
-class EmailTemplateViewSet(viewsets.ModelViewSet):
-    serializer_class = EmailTemplateSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
-
-    def _get_project(self):
-        project = Project.objects.filter(
-            pk=self.kwargs["project_pk"],
-            owner=self.request.user,
-        ).first()
-        if not project:
-            raise PermissionDenied()
-        return project
-
-    def get_queryset(self):
-        return EmailTemplate.objects.filter(project=self._get_project())
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context["project"] = self._get_project()
-        return context
 
 
 @extend_schema_view(

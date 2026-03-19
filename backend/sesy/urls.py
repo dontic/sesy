@@ -6,7 +6,6 @@ from .views import (
     AudienceMemberViewSet,
     SESConfigurationView,
     SESConfigurationCheckProductionStatusView,
-    EmailTemplateViewSet,
     CampaignViewSet,
     ProjectDomainView,
     ProjectDomainCheckView,
@@ -19,7 +18,6 @@ router.register(r"projects", ProjectViewSet, basename="project")
 projects_router = routers.NestedDefaultRouter(router, r"projects", lookup="project")
 projects_router.register(r"tags", TagViewSet, basename="project-tag")
 projects_router.register(r"members", AudienceMemberViewSet, basename="project-member")
-projects_router.register(r"templates", EmailTemplateViewSet, basename="project-template")
 projects_router.register(r"campaigns", CampaignViewSet, basename="project-campaign")
 
 urlpatterns = (

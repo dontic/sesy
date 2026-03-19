@@ -1,6 +1,6 @@
 from django.contrib import admin
 from solo.admin import SingletonModelAdmin
-from .models import Project, Tag, AudienceMember, SESConfiguration, EmailTemplate, Campaign, VerifiedDomain
+from .models import Project, Tag, AudienceMember, SESConfiguration, Campaign, VerifiedDomain
 
 
 @admin.register(SESConfiguration)
@@ -38,16 +38,9 @@ class AudienceMemberAdmin(admin.ModelAdmin):
     filter_horizontal = ["tags"]
 
 
-@admin.register(EmailTemplate)
-class EmailTemplateAdmin(admin.ModelAdmin):
-    list_display = ["name", "project", "subject", "created_at"]
-    list_filter = ["project"]
-    search_fields = ["name", "subject"]
-
-
 @admin.register(Campaign)
 class CampaignAdmin(admin.ModelAdmin):
-    list_display = ["name", "project", "template", "from_email", "status", "send_to_all", "sent_at"]
+    list_display = ["name", "project", "from_email", "status", "send_to_all", "sent_at"]
     list_filter = ["project", "status"]
     search_fields = ["name", "from_email"]
     filter_horizontal = ["tags"]

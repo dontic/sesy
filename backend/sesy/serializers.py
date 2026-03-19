@@ -4,7 +4,6 @@ from .models import (
     Tag,
     AudienceMember,
     SESConfiguration,
-    EmailTemplate,
     Campaign,
     VerifiedDomain,
 )
@@ -177,23 +176,11 @@ class SESConfigurationSerializer(serializers.ModelSerializer):
         read_only_fields = ["pk", "production_status", "created_at", "updated_at"]
 
 
-class EmailTemplateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = EmailTemplate
-        fields = ["pk", "name", "subject", "html_body", "created_at", "updated_at"]
-        read_only_fields = ["pk", "created_at", "updated_at"]
-
-    def create(self, validated_data):
-        project = self.context["project"]
-        return EmailTemplate.objects.create(project=project, **validated_data)
-
-
 class CampaignSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Tag.objects.none(), required=False
     )
     tags_detail = TagSerializer(source="tags", many=True, read_only=True)
-    template_detail = EmailTemplateSerializer(source="template", read_only=True)
 
     class Meta:
         model = Campaign
@@ -202,8 +189,8 @@ class CampaignSerializer(serializers.ModelSerializer):
             "name",
             "from_email",
             "from_name",
-            "template",
-            "template_detail",
+            "subject",
+            "html_body",
             "send_to_all",
             "tags",
             "tags_detail",
@@ -219,9 +206,6 @@ class CampaignSerializer(serializers.ModelSerializer):
         project = self.context.get("project")
         if project:
             self.fields["tags"].child_relation.queryset = Tag.objects.filter(
-                project=project
-            )
-            self.fields["template"].queryset = EmailTemplate.objects.filter(
                 project=project
             )
 
