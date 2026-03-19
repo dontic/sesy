@@ -28,7 +28,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
 import { useUserStore } from "@/stores/UserStore";
-import { authMeUpdate } from "@/api/django/auth/auth";
+import { authMeUpdate, authPasswordChangeCreate } from "@/api/django/auth/auth";
 import {
   sesySesConfigurationRetrieve,
   sesySesConfigurationUpdate
@@ -36,24 +36,49 @@ import {
 import type { SESConfiguration } from "@/api/django/djangoAPI.schemas";
 
 const UserProfileSchema = z.object({
+  username: z
+    .string()
+    .min(1, "Username is required")
+    .max(150, "Username must be 150 characters or less")
+    .regex(/^[\w.@+-]+$/, "Enter a valid username. Letters, digits and @/./+/-/_ only."),
   first_name: z.string().max(30, "First name must be 30 characters or less"),
   last_name: z.string().max(30, "Last name must be 30 characters or less")
 });
 
 type UserProfileValues = z.infer<typeof UserProfileSchema>;
 
+const ChangePasswordSchema = z
+  .object({
+    old_password: z.string().min(1, "Current password is required"),
+    new_password1: z.string().min(1, "New password is required"),
+    new_password2: z.string().min(1, "Please confirm your new password")
+  })
+  .refine((data) => data.new_password1 === data.new_password2, {
+    message: "Passwords do not match",
+    path: ["new_password2"]
+  });
+
+type ChangePasswordValues = z.infer<typeof ChangePasswordSchema>;
+
 const ProfileTab = () => {
   const { user, setUser } = useUserStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const form = useForm<UserProfileValues>({
     resolver: zodResolver(UserProfileSchema),
-    defaultValues: { first_name: "", last_name: "" }
+    defaultValues: { username: "", first_name: "", last_name: "" }
+  });
+
+  const passwordForm = useForm<ChangePasswordValues>({
+    resolver: zodResolver(ChangePasswordSchema),
+    defaultValues: { old_password: "", new_password1: "", new_password2: "" }
   });
 
   useEffect(() => {
     if (user) {
       form.reset({
+        username: user.username ?? "",
         first_name: user.first_name ?? "",
         last_name: user.last_name ?? ""
       });
@@ -73,52 +98,139 @@ const ProfileTab = () => {
     }
   };
 
+  const onChangePassword = async (values: ChangePasswordValues) => {
+    setIsChangingPassword(true);
+    try {
+      await authPasswordChangeCreate(values);
+      passwordForm.reset();
+      toast.success("Password changed successfully");
+    } catch {
+      toast.error("Failed to change password. Please check your current password and try again.");
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
   return (
-    <Card className="w-full max-w-lg">
-      <CardHeader>
-        <CardTitle>Profile Information</CardTitle>
-        <CardDescription>Update your first and last name.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="first_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>First Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="John" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="last_name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Last Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Doe" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button
-              type="submit"
-              className="hover:cursor-pointer"
-              loading={isSubmitting}
-            >
-              Save Changes
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <Card className="w-full max-w-lg">
+        <CardHeader>
+          <CardTitle>Profile Information</CardTitle>
+          <CardDescription>Update your username and name.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Username</FormLabel>
+                    <FormControl>
+                      <Input placeholder="johndoe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="first_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>First Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="John" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="last_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Last Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="submit"
+                className="hover:cursor-pointer"
+                loading={isSubmitting}
+              >
+                Save Changes
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+
+      <Card className="w-full max-w-lg">
+        <CardHeader>
+          <CardTitle>Change Password</CardTitle>
+          <CardDescription>Update your account password.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...passwordForm}>
+            <form onSubmit={passwordForm.handleSubmit(onChangePassword)} className="space-y-4">
+              <FormField
+                control={passwordForm.control}
+                name="old_password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Current Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={passwordForm.control}
+                name="new_password1"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={passwordForm.control}
+                name="new_password2"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm New Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="submit"
+                className="hover:cursor-pointer"
+                loading={isChangingPassword}
+              >
+                Change Password
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
