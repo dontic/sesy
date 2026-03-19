@@ -44,12 +44,10 @@ const Login = () => {
                 href="#"
                 className="flex flex-col items-center gap-2 font-medium"
               >
-                <span className="sr-only">{import.meta.env.VITE_APP_NAME}</span>
+                <span className="sr-only">Sesy</span>
               </a>
               <Icon className="h-[50px]" />
-              <h1 className="text-xl font-bold">
-                Welcome to {import.meta.env.VITE_APP_NAME}
-              </h1>
+              <h1 className="text-xl font-bold">Welcome to Sesy</h1>
             </div>
 
             {/* Login form */}

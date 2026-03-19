@@ -21,11 +21,6 @@ COPY src/ ./src/
 COPY public/ ./public/
 COPY index.html ./
 
-# Build args that can be passed during build time
-ARG VITE_APP_NAME=My App
-ARG VITE_API_BASE_URL=https://api.mydomain.com
-ARG VITE_API_TIMEOUT=30000
-
 # Build the app
 RUN npm run build
 

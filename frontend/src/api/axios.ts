@@ -3,9 +3,11 @@
 import axios from "axios";
 import type { AxiosRequestConfig } from "axios";
 
+const baseURL = import.meta.env.DEV ? "http://localhost:8000" : "/api";
+
 export const customAxios = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
-  timeout: import.meta.env.VITE_API_TIMEOUT,
+  baseURL,
+  timeout: 30000,
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
   withXSRFToken: true,
