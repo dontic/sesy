@@ -9,16 +9,16 @@ x-django-app: &django-app
     # ── Django Core ──────────────────────────────────────────────────────
     DJANGO_SECRET_KEY: change-me
     DOMAIN: sesy.mydomain.com
-    # ── PostgreSQL (internal defaults — no need to change unless using an external PostgreSQL server) ───────────────
-    POSTGRES_DB_NAME: django
-    POSTGRES_USER: django
-    POSTGRES_PASSWORD: django
-    POSTGRES_HOST: postgres
-    POSTGRES_PORT: "5432"
-    # ── Redis (internal defaults — no need to change unless using an external Redis server) ────────────────────
-    REDIS_HOST: redis
-    REDIS_PORT: "6379"
-    REDIS_DB: 0
+    # ── PostgreSQL (override if using an external PostgreSQL server) ─────────────
+    # POSTGRES_DB_NAME: django
+    # POSTGRES_USER: django
+    # POSTGRES_PASSWORD: django
+    # POSTGRES_HOST: postgres
+    # POSTGRES_PORT: "5432"
+    # ── Redis (override if using an external Redis server) ────────────────────────
+    # REDIS_HOST: redis
+    # REDIS_PORT: "6379"
+    # REDIS_DB: 0
   volumes:
     # Media files volume — shared across all Django services
     - media:/app/backend/media
