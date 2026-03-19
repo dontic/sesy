@@ -31,7 +31,7 @@ const CenteredLayout = ({ children }: Props) => {
         console.debug("User logged in");
 
         // Redirect to the home page
-        navigate("/");
+        navigate("/campaigns");
       } catch {
         console.debug("User not logged in");
         setIsLoading(false);

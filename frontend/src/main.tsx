@@ -1,6 +1,6 @@
 import { StrictMode, lazy, Suspense } from "react";
 import { createRoot } from "react-dom/client";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 
 // Styles
 import "./index.css";
@@ -13,7 +13,7 @@ import { Toaster } from "sonner";
 import LoadingFallback from "@/components/LoadingFallback";
 
 // Pages - Lazy loaded for code splitting
-const Home = lazy(() => import("@/pages/Home"));
+const Campaigns = lazy(() => import("@/pages/Campaigns"));
 const Login = lazy(() => import("@/pages/Login"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Settings = lazy(() => import("@/pages/Settings"));
@@ -24,10 +24,14 @@ const router = createBrowserRouter([
     element: <ProtectedLayout />,
     children: [
       {
-        path: "/",
+        index: true,
+        element: <Navigate to="/campaigns" replace />
+      },
+      {
+        path: "/campaigns",
         element: (
           <Suspense fallback={<LoadingFallback />}>
-            <Home />
+            <Campaigns />
           </Suspense>
         )
       },

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { HomeIcon } from "lucide-react";
+import { RocketIcon } from "lucide-react";
 
 import { NavMain } from "@/components/sidebar/nav-main";
 import { NavUser } from "@/components/sidebar/nav-user";
@@ -17,9 +17,9 @@ import {
 // This is sample data.
 export const navData = [
   {
-    title: "Home",
-    url: "/",
-    icon: HomeIcon
+    title: "Campaigns",
+    url: "/campaigns",
+    icon: RocketIcon
   }
 ];
 

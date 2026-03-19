@@ -24,7 +24,7 @@ const Login = () => {
         username: formData.username,
         password: formData.password
       });
-      navigate("/");
+      navigate("/campaigns");
     } catch (error: any) {
       console.error("Login error:", error);
       toast.error("Invalid username or password. Please try again.");
