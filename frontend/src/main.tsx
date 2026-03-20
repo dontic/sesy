@@ -11,6 +11,7 @@ import "./index.css";
 
 // Layouts
 import ProtectedLayout from "@/layouts/ProtectedLayout";
+import OnboardingLayout from "@/layouts/OnboardingLayout";
 
 // Components
 import { Toaster } from "sonner";
@@ -23,6 +24,7 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Audience = lazy(() => import("@/pages/Audience"));
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
+const Onboarding = lazy(() => import("@/pages/Onboarding"));
 const router = createBrowserRouter([
   {
     path: "/",
@@ -53,6 +55,20 @@ const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingFallback />}>
             <Settings />
+          </Suspense>
+        )
+      }
+    ]
+  },
+  {
+    path: "/onboarding",
+    element: <OnboardingLayout />,
+    children: [
+      {
+        index: true,
+        element: (
+          <Suspense fallback={<LoadingFallback />}>
+            <Onboarding />
           </Suspense>
         )
       }

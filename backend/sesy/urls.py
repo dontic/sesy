@@ -10,6 +10,7 @@ from .views import (
     ProjectDomainView,
     PublicAudienceMemberView,
     UnsubscribeView,
+    OnboardingView,
 )
 
 router = routers.DefaultRouter()
@@ -44,6 +45,11 @@ urlpatterns = (
             "public/members/",
             PublicAudienceMemberView.as_view(),
             name="public-members",
+        ),
+        path(
+            "onboarding/",
+            OnboardingView.as_view(),
+            name="onboarding",
         ),
     ]
 )
