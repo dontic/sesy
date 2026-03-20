@@ -1358,9 +1358,6 @@ components:
           type: string
           default: ''
           maxLength: 150
-        subscribed:
-          type: boolean
-          default: true
         tags:
           type: array
           items:
