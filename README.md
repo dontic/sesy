@@ -7,6 +7,11 @@
   <strong>Self-hosted email campaign management, powered by AWS SES.</strong>
 </p>
 
+![GitHub Release](https://img.shields.io/github/v/release/dontic/sesy)
+![Docker Pulls](https://img.shields.io/docker/pulls/dontic/sesy-backend)
+![GitHub Repo stars](https://img.shields.io/github/stars/dontic/sesy)
+
+
 > ⚠️ Sesy is still in beta and not yet recommended for production use.
 
 > 👋 Beta testers are welcomed!
