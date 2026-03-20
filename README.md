@@ -105,3 +105,9 @@ Contributions are welcome! Whether it's bug reports, feature requests, or pull r
 - **Roadmap items** — If you want to work on something from the roadmap, open an issue first so we can coordinate
 
 Please keep PRs focused — one feature or fix per PR makes review much easier.
+
+### Stack info
+
+- **Backend** - [Python] - Django REST API + celery workers
+- **Frontned** - [Typescript] - React + tailwindcss + shadcnUI
+- **Deployment** - Docker
