@@ -9,6 +9,8 @@
 
 > ⚠️ Sesy is still in beta and not yet recommended for production use.
 
+> 👋 Beta testers are welcomed!
+
 ![Hero image](./docs/images/hero.png)
 
 ---
