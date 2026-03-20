@@ -50,6 +50,7 @@ Compare that to Mailchimp at ~$350/month for 50,000 contacts, or Brevo at ~$65/m
 - **API** - Full API with docs and API key authentication, so you can manage audience members programatically
 - **Campaign statistics** - _[In the works]_ See how many opens and clicks your campaign had.
 - **Transactional emails** - _[In the works]_ Send transactional emails (login codes, password resets, etc.)
+- **One-click unsubscribe commpliant** - All campaign emails are automatically sent with a mandatory "_Unsubscribe here_" footer. Sesy provides a one-click unsubscribe workflow for audience members.
 - **One-command deployment** - Complete stack (app, worker, scheduler, DB, cache, proxy) via Docker Compose
 
 ---
