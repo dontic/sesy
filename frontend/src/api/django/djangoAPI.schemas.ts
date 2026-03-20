@@ -1,9 +1,20 @@
 // @ts-nocheck
 export interface ApiKey {
   readonly pk: number;
+  /** @maxLength 100 */
+  name?: string;
   readonly key: string;
+  readonly created_by: string;
   readonly created_at: string;
   readonly updated_at: string;
+}
+
+export interface ApiKeyRequest {
+  /**
+   * @minLength 1
+   * @maxLength 100
+   */
+  name?: string;
 }
 
 export interface AudienceMember {
