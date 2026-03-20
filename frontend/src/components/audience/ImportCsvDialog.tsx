@@ -71,9 +71,26 @@ const ImportCsvDialog = ({
           <Alert>
             <AlertDescription>
               The CSV file must contain exactly these headers (case-sensitive):{" "}
-              <code className="font-mono font-semibold">
-                email, first_name, last_name
-              </code>
+              <ul className="list-disc list-inside font-mono font-semibold">
+                <li>
+                  <span className="font-bold">email</span>{" "}
+                  <span className="text-xs">(required)</span>
+                </li>
+                <li>
+                  <span className="font-bold">first_name</span>{" "}
+                  <span className="text-xs">(optional)</span>
+                </li>
+                <li>
+                  <span className="font-bold">last_name</span>{" "}
+                  <span className="text-xs">(optional)</span>
+                </li>
+                <li>
+                  <span className="font-bold">tags</span>{" "}
+                  <span className="text-xs">
+                    (optional, comma separated, i.e. "tag 1, tag 2")
+                  </span>
+                </li>
+              </ul>
             </AlertDescription>
           </Alert>
 

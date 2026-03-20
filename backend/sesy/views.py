@@ -168,28 +168,35 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
             content = raw.decode("latin-1")
 
         reader = csv.DictReader(io.StringIO(content))
-        required_headers = {"email", "first_name", "last_name"}
-        if not reader.fieldnames or not required_headers.issubset(
-            set(reader.fieldnames)
-        ):
+        if not reader.fieldnames or "email" not in reader.fieldnames:
             return Response(
                 {
-                    "detail": "CSV must contain exactly these headers: email, first_name, last_name."
+                    "detail": "CSV must contain an email column. first_name, last_name, and tags are optional."
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        fieldnames = set(reader.fieldnames)
+        has_tags_column = "tags" in fieldnames
+        has_first_name = "first_name" in fieldnames
+        has_last_name = "last_name" in fieldnames
         members_to_create = []
+        email_tags_map = {}  # email -> list of tag name strings
+
         for row in reader:
             email = row["email"].strip()
             if not email:
                 continue
+            if has_tags_column and row["tags"].strip():
+                email_tags_map[email] = [
+                    t.strip() for t in row["tags"].split(",") if t.strip()
+                ]
             members_to_create.append(
                 AudienceMember(
                     project=project,
                     email=email,
-                    first_name=row["first_name"].strip(),
-                    last_name=row["last_name"].strip(),
+                    first_name=row["first_name"].strip() if has_first_name else "",
+                    last_name=row["last_name"].strip() if has_last_name else "",
                 )
             )
 
@@ -200,6 +207,22 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
             chunk = members_to_create[i : i + chunk_size]
             inserted = AudienceMember.objects.bulk_create(chunk, ignore_conflicts=True)
             created_count += len(inserted)
+
+        if email_tags_map:
+            all_tag_names = {name for names in email_tags_map.values() for name in names}
+            tag_objects = {}
+            for tag_name in all_tag_names:
+                tag, _ = Tag.objects.get_or_create(project=project, name=tag_name)
+                tag_objects[tag_name] = tag
+
+            members_with_tags = AudienceMember.objects.filter(
+                project=project, email__in=email_tags_map.keys()
+            )
+            for member in members_with_tags:
+                tags_for_member = [
+                    tag_objects[name] for name in email_tags_map[member.email]
+                ]
+                member.tags.add(*tags_for_member)
 
         return Response(
             {
