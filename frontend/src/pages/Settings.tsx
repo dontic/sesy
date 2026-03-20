@@ -788,7 +788,7 @@ const UsersTab = () => {
   );
 };
 
-const API_BASE_URL = import.meta.env.DEV ? "http://localhost:8000" : "/api";
+const API_BASE_URL = import.meta.env.DEV ? "http://localhost:8000" : `${window.location.origin}/api`;
 
 const ApiDocsSection = ({ apiKey }: { apiKey: ApiKey | null }) => {
   const exampleKey = apiKey?.key ?? "<your-api-key>";
