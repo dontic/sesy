@@ -95,7 +95,7 @@ const Audience = () => {
     if (subscribedFilter !== "all") params.subscribed = subscribedFilter === "subscribed";
     if (tagFilter) params.tag = tagFilter;
 
-    sesyProjectsMembersList(String(currentProject.pk), params)
+    sesyProjectsMembersList(currentProject.pk, params)
       .then((res) => {
         setMembers(res.results);
         setCount(res.count);
@@ -120,7 +120,7 @@ const Audience = () => {
   const handleImported = () => {
     if (!currentProject) return;
     setLoading(true);
-    sesyProjectsMembersList(String(currentProject.pk), {
+    sesyProjectsMembersList(currentProject.pk, {
       page: 1,
       page_size: PAGE_SIZE
     })
@@ -377,7 +377,7 @@ const Audience = () => {
       {deletingMember && currentProject && (
         <DeleteAudienceMemberDialog
           member={deletingMember}
-          projectPk={String(currentProject.pk)}
+          projectPk={currentProject.pk}
           open={!!deletingMember}
           onOpenChange={(open) => {
             if (!open) setDeletingMember(null);
@@ -389,7 +389,7 @@ const Audience = () => {
       {editingMember && currentProject && (
         <EditAudienceMemberDialog
           member={editingMember}
-          projectPk={String(currentProject.pk)}
+          projectPk={currentProject.pk}
           open={!!editingMember}
           onOpenChange={(open) => {
             if (!open) setEditingMember(null);
@@ -400,7 +400,7 @@ const Audience = () => {
 
       {currentProject && (
         <CreateAudienceMemberDialog
-          projectPk={String(currentProject.pk)}
+          projectPk={currentProject.pk}
           open={createOpen}
           onOpenChange={setCreateOpen}
           onCreated={handleCreated}
@@ -409,7 +409,7 @@ const Audience = () => {
 
       {currentProject && (
         <ImportCsvDialog
-          projectPk={String(currentProject.pk)}
+          projectPk={currentProject.pk}
           open={importOpen}
           onOpenChange={setImportOpen}
           onImported={handleImported}

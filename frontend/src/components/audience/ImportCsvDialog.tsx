@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { sesyProjectsMembersUploadCsvCreate } from "@/api/django/audience-members/audience-members";
 
 interface Props {
-  projectPk: string;
+  projectPk: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onImported: () => void;

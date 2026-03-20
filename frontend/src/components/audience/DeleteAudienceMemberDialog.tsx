@@ -15,7 +15,7 @@ import type { AudienceMember } from "@/api/django/djangoAPI.schemas";
 
 interface Props {
   member: AudienceMember;
-  projectPk: string;
+  projectPk: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onDeleted: (pk: number) => void;
@@ -32,7 +32,7 @@ const DeleteAudienceMemberDialog = ({
 
   const handleDelete = () => {
     setDeleting(true);
-    sesyProjectsMembersDestroy(projectPk, String(member.pk))
+    sesyProjectsMembersDestroy(projectPk, member.pk)
       .then(() => {
         onDeleted(member.pk);
         onOpenChange(false);

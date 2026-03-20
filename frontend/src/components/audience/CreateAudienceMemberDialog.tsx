@@ -24,7 +24,7 @@ import { sesyProjectsTagsList } from "@/api/django/tags/tags";
 import type { AudienceMember, Tag } from "@/api/django/djangoAPI.schemas";
 
 interface Props {
-  projectPk: string;
+  projectPk: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: (member: AudienceMember) => void;
@@ -46,7 +46,7 @@ const CreateAudienceMemberDialog = ({
 
   useEffect(() => {
     if (!open) return;
-    sesyProjectsTagsList(projectPk).then(setAvailableTags);
+    sesyProjectsTagsList(String(projectPk)).then(setAvailableTags);
   }, [open, projectPk]);
 
   const handleCreate = () => {

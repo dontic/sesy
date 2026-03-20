@@ -27,7 +27,7 @@ import type { AudienceMember, Tag } from "@/api/django/djangoAPI.schemas";
 
 interface Props {
   member: AudienceMember;
-  projectPk: string;
+  projectPk: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved: (updated: AudienceMember) => void;
@@ -60,12 +60,12 @@ const EditAudienceMemberDialog = ({
 
   useEffect(() => {
     if (!open) return;
-    sesyProjectsTagsList(projectPk).then(setAvailableTags);
+    sesyProjectsTagsList(String(projectPk)).then(setAvailableTags);
   }, [open, projectPk]);
 
   const handleSave = () => {
     setSaving(true);
-    sesyProjectsMembersUpdate(projectPk, String(member.pk), {
+    sesyProjectsMembersUpdate(projectPk, member.pk, {
       email,
       first_name: firstName,
       last_name: lastName,
