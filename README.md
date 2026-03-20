@@ -19,16 +19,16 @@ Sesy is an open-source, self-hosted email campaign platform built on top of AWS 
 
 ### Why Sesy instead of the alternatives?
 
-| | Sesy | Brevo | Mailchimp | Loops | Sendy |
-|---|---|---|---|---|---|
-| Self-hosted | ✅ | ❌ | ❌ | ❌ | ✅ |
-| Open source | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Your data, your servers | ✅ | ❌ | ❌ | ❌ | ✅ |
-| No per-email fees | ✅ | ❌ | ❌ | ❌ | ✅ |
-| No monthly subscriber limits | ✅ | ❌ | ❌ | ❌ | ✅ |
-| Modern UI | ✅ | ✅ | ✅ | ✅ | ❌ |
-| REST API | ✅ | ✅ | ✅ | ✅ | ❌ |
-| Docker one-command deploy | ✅ | ❌ | ❌ | ❌ | ❌ |
+|                              | Sesy | Brevo | Mailchimp | Loops | Sendy |
+| ---------------------------- | ---- | ----- | --------- | ----- | ----- |
+| Self-hosted                  | ✅   | ❌    | ❌        | ❌    | ✅    |
+| Open source                  | ✅   | ❌    | ❌        | ❌    | ❌    |
+| Your data, your servers      | ✅   | ❌    | ❌        | ❌    | ✅    |
+| No per-email fees            | ✅   | ❌    | ❌        | ❌    | ✅    |
+| No monthly subscriber limits | ✅   | ❌    | ❌        | ❌    | ✅    |
+| Modern UI                    | ✅   | ✅    | ✅        | ✅    | ❌    |
+| REST API                     | ✅   | ✅    | ✅        | ✅    | ❌    |
+| Docker one-command deploy    | ✅   | ❌    | ❌        | ❌    | ❌    |
 
 Other tools charge based on the number of contacts or emails sent, and you hand your audience data over to a third party.
 
@@ -124,7 +124,7 @@ Compare that to Mailchimp at ~$350/month for 50,000 contacts, or Brevo at ~$65/m
 - [x] Configure AWS SES fully from the app
 - [x] Adding audience members via API
 - [x] Domain verification
-- [ ] Onboarding flow on first deployment
+- [x] Onboarding flow on first deployment
 - [ ] Prevent sending campaigns if SES configuration or domain are invalid
 - [ ] Campaign statistics via SES event webhooks
 - [ ] Batch audience member edits
