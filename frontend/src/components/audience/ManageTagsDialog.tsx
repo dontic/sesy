@@ -6,17 +6,27 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   sesyProjectsTagsCreate,
   sesyProjectsTagsDestroy,
   sesyProjectsTagsList,
+  sesyProjectsTagsMergeCreate,
   sesyProjectsTagsUpdate,
 } from "@/api/django/tags/tags";
 import type { Tag } from "@/api/django/djangoAPI.schemas";
+
+interface MergeInfo {
+  sourcePk: number;
+  sourceName: string;
+  targetPk: number;
+  targetName: string;
+}
 
 interface Props {
   projectPk: string;
@@ -32,6 +42,8 @@ const ManageTagsDialog = ({ projectPk, open, onOpenChange }: Props) => {
   const [editingName, setEditingName] = useState("");
   const [savingPk, setSavingPk] = useState<number | null>(null);
   const [deletingPk, setDeletingPk] = useState<number | null>(null);
+  const [mergeInfo, setMergeInfo] = useState<MergeInfo | null>(null);
+  const [merging, setMerging] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -67,7 +79,37 @@ const ManageTagsDialog = ({ projectPk, open, onOpenChange }: Props) => {
         setTags((prev) => prev.map((t) => (t.pk === pk ? updated : t)));
         setEditingPk(null);
       })
+      .catch((err) => {
+        if (err?.response?.status === 409) {
+          const conflictData = err.response.data?.name;
+          const conflictingPk: number = conflictData?.conflicting_tag_pk;
+          const conflictingTag = tags.find((t) => t.pk === conflictingPk);
+          const sourceTag = tags.find((t) => t.pk === pk);
+          if (sourceTag && conflictingTag) {
+            setMergeInfo({
+              sourcePk: pk,
+              sourceName: sourceTag.name,
+              targetPk: conflictingPk,
+              targetName: editingName.trim(),
+            });
+          }
+        }
+      })
       .finally(() => setSavingPk(null));
+  };
+
+  const handleMergeConfirm = () => {
+    if (!mergeInfo) return;
+    setMerging(true);
+    sesyProjectsTagsMergeCreate(projectPk, String(mergeInfo.sourcePk), {
+      target_tag_pk: mergeInfo.targetPk,
+    })
+      .then(() => {
+        setTags((prev) => prev.filter((t) => t.pk !== mergeInfo.sourcePk));
+        setEditingPk(null);
+        setMergeInfo(null);
+      })
+      .finally(() => setMerging(false));
   };
 
   const handleDelete = (pk: number) => {
@@ -78,6 +120,29 @@ const ManageTagsDialog = ({ projectPk, open, onOpenChange }: Props) => {
   };
 
   return (
+    <>
+    <Dialog open={!!mergeInfo} onOpenChange={(o) => !o && setMergeInfo(null)}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Merge Tags</DialogTitle>
+          <DialogDescription>
+            A tag named <strong>&ldquo;{mergeInfo?.targetName}&rdquo;</strong> already exists. Do
+            you want to merge <strong>&ldquo;{mergeInfo?.sourceName}&rdquo;</strong> into{" "}
+            <strong>&ldquo;{mergeInfo?.targetName}&rdquo;</strong>? This will move all audience
+            members from the old tag to the existing one and delete{" "}
+            <strong>&ldquo;{mergeInfo?.sourceName}&rdquo;</strong>.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setMergeInfo(null)} disabled={merging}>
+            Cancel
+          </Button>
+          <Button onClick={handleMergeConfirm} disabled={merging}>
+            {merging ? "Merging..." : "Merge"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
@@ -169,6 +234,7 @@ const ManageTagsDialog = ({ projectPk, open, onOpenChange }: Props) => {
         </div>
       </DialogContent>
     </Dialog>
+    </>
   );
 };
 

@@ -839,6 +839,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/Tag'
           description: ''
+        '409':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TagNameConflictError'
+          description: ''
     delete:
       operationId: sesy_projects_tags_destroy
       parameters:
@@ -859,6 +865,43 @@ paths:
       responses:
         '204':
           description: No response body
+  /sesy/projects/{project_pk}/tags/{id}/merge/:
+    post:
+      operationId: sesy_projects_tags_merge_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: project_pk
+        schema:
+          type: string
+        required: true
+      tags:
+      - Tags
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagMergeRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TagMergeRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TagMergeRequestRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+          description: ''
   /sesy/projects/{project_pk}/unsubscribe/:
     post:
       operationId: sesy_projects_unsubscribe_create
@@ -1479,6 +1522,30 @@ components:
       - created_at
       - name
       - pk
+    TagMergeRequestRequest:
+      type: object
+      properties:
+        target_tag_pk:
+          type: integer
+      required:
+      - target_tag_pk
+    TagNameConflictDetail:
+      type: object
+      properties:
+        message:
+          type: string
+        conflicting_tag_pk:
+          type: integer
+      required:
+      - conflicting_tag_pk
+      - message
+    TagNameConflictError:
+      type: object
+      properties:
+        name:
+          $ref: '#/components/schemas/TagNameConflictDetail'
+      required:
+      - name
     TagRequest:
       type: object
       properties:
