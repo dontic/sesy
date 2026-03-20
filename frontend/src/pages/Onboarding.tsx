@@ -38,7 +38,7 @@ import type { OnboardingResponse } from "@/api/django/djangoAPI.schemas";
 /* -------------------------------------------------------------------------- */
 
 const STEPS = [
-  { label: "Username" },
+  { label: "Profile" },
   { label: "Password" },
   { label: "Project" },
   { label: "AWS SES" },
@@ -107,7 +107,9 @@ const UsernameSchema = z.object({
     .regex(
       /^[\w.@+-]+$/,
       "Letters, digits and @/./+/-/_ only."
-    )
+    ),
+  first_name: z.string().max(30, "Must be 30 characters or less").optional(),
+  last_name: z.string().max(30, "Must be 30 characters or less").optional()
 });
 
 function StepUsername({ onComplete }: { onComplete: () => void }) {
@@ -116,13 +118,21 @@ function StepUsername({ onComplete }: { onComplete: () => void }) {
 
   const form = useForm<z.infer<typeof UsernameSchema>>({
     resolver: zodResolver(UsernameSchema),
-    defaultValues: { username: user?.username ?? "" }
+    defaultValues: {
+      username: user?.username ?? "",
+      first_name: user?.first_name ?? "",
+      last_name: user?.last_name ?? ""
+    }
   });
 
   const onSubmit = async (values: z.infer<typeof UsernameSchema>) => {
     setIsSubmitting(true);
     try {
-      const updated = await authMeUpdate(values);
+      const updated = await authMeUpdate({
+        username: values.username,
+        ...(values.first_name !== undefined ? { first_name: values.first_name } : {}),
+        ...(values.last_name !== undefined ? { last_name: values.last_name } : {})
+      });
       setUser({ ...user!, ...updated });
       toast.success("Username updated");
       onComplete();
@@ -136,10 +146,10 @@ function StepUsername({ onComplete }: { onComplete: () => void }) {
   return (
     <>
       <CardHeader>
-        <CardTitle>Change your username</CardTitle>
+        <CardTitle>Set up your profile</CardTitle>
         <CardDescription>
           The default username is <strong>admin</strong>. Choose a unique
-          username for your account.
+          username and add your name.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -150,7 +160,7 @@ function StepUsername({ onComplete }: { onComplete: () => void }) {
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>New Username</FormLabel>
+                  <FormLabel>Username</FormLabel>
                   <FormControl>
                     <Input placeholder="johndoe" {...field} />
                   </FormControl>
@@ -158,8 +168,34 @@ function StepUsername({ onComplete }: { onComplete: () => void }) {
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="first_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>First Name (optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="John" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="last_name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Last Name (optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <Button type="submit" className="w-full" loading={isSubmitting}>
-              Save Username
+              Save Profile
             </Button>
           </form>
         </Form>
