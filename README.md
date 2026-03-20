@@ -9,7 +9,7 @@
 
 > ⚠️ Sesy is still in beta and not yet recommended for production use.
 
-![Hero image](./docs/hero.png)
+![Hero image](./docs/images/hero.png)
 
 ---
 
@@ -52,70 +52,14 @@ Compare that to Mailchimp at ~$350/month for 50,000 contacts, or Brevo at ~$65/m
 
 ## Getting Started
 
-> ⚠️ You will need an AWS account with SES out of sandbox (production) mode.
+> ⚠️ You will need an AWS account with SES out of sandbox (production) mode. [Click here](./docs/configuring-aws-ses.md) for a quick guide on how to do it.
 
 1. Copy `docker-compose.yml` from this repo
 2. Update the environment variables in the compose file to match your domain
 3. Run `docker compose up -d`
 4. Open `http://localhost:8080`
-5. Log in with username `admin` / password `admin`, change these in the Settings page
-
----
-
-## Setting Up AWS SES
-
-### 1. Create an IAM User
-
-1. Sign up for an AWS account [here](https://portal.aws.amazon.com/billing/signup)
-2. In the AWS console, search for **IAM** and open it
-
-   ![Search for IAM](./docs/search_iam.png)
-
-3. In the left sidebar, click **Users**
-
-   ![Click on users](./docs/users.png)
-
-4. Click **Create user** in the top right
-
-   ![Create user](./docs/create_user.png)
-
-5. Give the user any name you like
-
-   ![Name user](./docs/name_user.png)
-
-6. On the permissions screen, select **Attach policies directly**
-
-   ![Attach policies directly](./docs/attach_policies.png)
-
-7. Search for and attach both `AmazonSESFullAccess` and `AmazonSNSFullAccess`, then click **Next**
-
-   ![AmazonSESFullAccess](./docs/AmazonSESFullAccess.png)
-   ![AmazonSNSFullAccess](./docs/AmazonSNSFullAccess.png)
-
-8. Click **Create user**
-
-### 2. Generate Access Keys
-
-9. Click on the newly created user
-
-   ![Created user](./docs/createduser.png)
-
-10. Go to the **Security credentials** tab
-11. Click **Create access key**
-
-    ![Create access key](./docs/createaccesskey.png)
-
-12. Copy the **Access Key** and **Secret Key**, then paste them into the AWS SES settings page in your Sesy instance. Select your preferred AWS region.
-
-    ![Sesy SES settings](./docs/sesysessettings.png)
-
-### 3. Request Production Access
-
-13. New AWS accounts start in SES sandbox mode (you can only send to verified addresses). Submit a production access request through the AWS SES console.
-
-    ![Request production](./docs/requestproduction.png)
-
-14. AWS will email you when approved. This usually takes a few hours to a day. In the meantime, you can start importing your audience in the **Audience** tab.
+5. Log in with username `admin` / password `admin`
+6. The app will guide you trough all the steps.
 
 ---
 
@@ -125,7 +69,19 @@ Compare that to Mailchimp at ~$350/month for 50,000 contacts, or Brevo at ~$65/m
 - [x] Adding audience members via API
 - [x] Domain verification
 - [x] Onboarding flow on first deployment
-- [ ] Prevent sending campaigns if SES configuration or domain are invalid
+- [ ] SES configuration alerts (i.e. prevent sending campaigns if SES is not properly configured)
 - [ ] Campaign statistics via SES event webhooks
 - [ ] Batch audience member edits
 - [ ] Transactional emails
+
+---
+
+## Collaborating
+
+Contributions are welcome! Whether it's bug reports, feature requests, or pull requests, all input is appreciated.
+
+- **Bug reports & feature requests** — Open an issue on GitHub describing the problem or idea
+- **Pull requests** — Fork the repo, create a branch, make your changes, and open a PR against `main`.
+- **Roadmap items** — If you want to work on something from the roadmap, open an issue first so we can coordinate
+
+Please keep PRs focused — one feature or fix per PR makes review much easier.
