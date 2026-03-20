@@ -81,7 +81,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         tags=["Tags"],
         responses={
             200: TagSerializer,
-            400: inline_serializer(
+            409: inline_serializer(
                 name="TagNameConflictError",
                 fields={
                     "name": inline_serializer(

@@ -1,4 +1,18 @@
 from rest_framework import serializers
+from rest_framework.exceptions import APIException
+
+
+class TagNameConflictError(APIException):
+    status_code = 409
+    default_code = "conflict"
+
+    def __init__(self, conflicting_tag_pk):
+        self.detail = {
+            "name": {
+                "message": "A tag with this name already exists in this project.",
+                "conflicting_tag_pk": conflicting_tag_pk,
+            }
+        }
 from .models import (
     ApiKey,
     Project,
@@ -23,10 +37,7 @@ class TagSerializer(serializers.ModelSerializer):
             qs = qs.exclude(pk=self.instance.pk)
         conflicting_tag = qs.first()
         if conflicting_tag:
-            raise serializers.ValidationError({
-                "message": "A tag with this name already exists in this project.",
-                "conflicting_tag_pk": conflicting_tag.pk,
-            })
+            raise TagNameConflictError(conflicting_tag.pk)
         return value
 
     def create(self, validated_data):
