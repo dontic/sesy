@@ -272,6 +272,19 @@ export interface Tag {
   readonly created_at: string;
 }
 
+export interface TagMergeRequestRequest {
+  target_tag_pk: number;
+}
+
+export interface TagNameConflictDetail {
+  message: string;
+  conflicting_tag_pk: number;
+}
+
+export interface TagNameConflictError {
+  name: TagNameConflictDetail;
+}
+
 export interface TagRequest {
   /**
    * @minLength 1

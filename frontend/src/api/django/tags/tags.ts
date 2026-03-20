@@ -1,5 +1,9 @@
 // @ts-nocheck
-import type { Tag, TagRequest } from "../djangoAPI.schemas";
+import type {
+  Tag,
+  TagMergeRequestRequest,
+  TagRequest,
+} from "../djangoAPI.schemas";
 
 import { customAxiosInstance } from "../../axios";
 
@@ -65,6 +69,22 @@ export const sesyProjectsTagsDestroy = (
     options,
   );
 };
+export const sesyProjectsTagsMergeCreate = (
+  projectPk: string,
+  id: string,
+  tagMergeRequestRequest: TagMergeRequestRequest,
+  options?: SecondParameter<typeof customAxiosInstance<Tag>>,
+) => {
+  return customAxiosInstance<Tag>(
+    {
+      url: `/sesy/projects/${projectPk}/tags/${id}/merge/`,
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      data: tagMergeRequestRequest,
+    },
+    options,
+  );
+};
 export type SesyProjectsTagsListResult = NonNullable<
   Awaited<ReturnType<typeof sesyProjectsTagsList>>
 >;
@@ -79,4 +99,7 @@ export type SesyProjectsTagsUpdateResult = NonNullable<
 >;
 export type SesyProjectsTagsDestroyResult = NonNullable<
   Awaited<ReturnType<typeof sesyProjectsTagsDestroy>>
+>;
+export type SesyProjectsTagsMergeCreateResult = NonNullable<
+  Awaited<ReturnType<typeof sesyProjectsTagsMergeCreate>>
 >;

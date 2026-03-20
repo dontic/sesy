@@ -77,7 +77,24 @@ class ProjectViewSet(viewsets.ModelViewSet):
     list=extend_schema(tags=["Tags"]),
     create=extend_schema(tags=["Tags"]),
     retrieve=extend_schema(tags=["Tags"]),
-    update=extend_schema(tags=["Tags"]),
+    update=extend_schema(
+        tags=["Tags"],
+        responses={
+            200: TagSerializer,
+            409: inline_serializer(
+                name="TagNameConflictError",
+                fields={
+                    "name": inline_serializer(
+                        name="TagNameConflictDetail",
+                        fields={
+                            "message": drf_serializers.CharField(),
+                            "conflicting_tag_pk": drf_serializers.IntegerField(),
+                        },
+                    )
+                },
+            ),
+        },
+    ),
     destroy=extend_schema(tags=["Tags"]),
 )
 class TagViewSet(viewsets.ModelViewSet):
@@ -101,6 +118,45 @@ class TagViewSet(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context["project"] = self._get_project()
         return context
+
+    @extend_schema(
+        tags=["Tags"],
+        request=inline_serializer(
+            name="TagMergeRequest",
+            fields={"target_tag_pk": drf_serializers.IntegerField()},
+        ),
+        responses={200: TagSerializer},
+    )
+    @action(detail=True, methods=["post"], url_path="merge")
+    def merge(self, request: Request, project_pk=None, pk=None):
+        project = self._get_project()
+        source_tag = self.get_object()
+
+        target_tag_pk = request.data.get("target_tag_pk")
+        if not target_tag_pk:
+            raise ValidationError({"target_tag_pk": "This field is required."})
+
+        target_tag = Tag.objects.filter(pk=target_tag_pk, project=project).first()
+        if not target_tag:
+            raise ValidationError({"target_tag_pk": "Tag not found in this project."})
+
+        if source_tag.pk == target_tag.pk:
+            raise ValidationError({"target_tag_pk": "Source and target tags must be different."})
+
+        # Re-assign audience members: add target to those that don't have it, then remove source
+        for member in source_tag.audience_members.exclude(tags=target_tag):
+            member.tags.add(target_tag)
+        source_tag.audience_members.through.objects.filter(tag=source_tag).delete()
+
+        # Re-assign campaigns: add target to those that don't have it, then remove source
+        for campaign in source_tag.campaigns.exclude(tags=target_tag):
+            campaign.tags.add(target_tag)
+        source_tag.campaigns.through.objects.filter(tag=source_tag).delete()
+
+        source_tag.delete()
+
+        serializer = self.get_serializer(target_tag)
+        return Response(serializer.data)
 
 
 class AudienceMemberPagination(PageNumberPagination):
