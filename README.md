@@ -33,7 +33,7 @@ Sesy is an open-source, self-hosted email campaign platform built on top of AWS 
 | Your data, your servers      | ✅   | ❌    | ❌        | ❌    | ✅    |
 | No per-email fees            | ✅   | ❌    | ❌        | ❌    | ✅    |
 | No monthly subscriber limits | ✅   | ❌    | ❌        | ❌    | ✅    |
-| Modern UI                    | ✅   | ✅    | ✅        | ✅    | ❌    |
+| Modern UI                    | ✅   | 🤷‍♂️    | 🤷‍♂️        | ✅    | ❌    |
 | REST API                     | ✅   | ✅    | ✅        | ✅    | ❌    |
 | Docker one-command deploy    | ✅   | ❌    | ❌        | ❌    | ❌    |
 
