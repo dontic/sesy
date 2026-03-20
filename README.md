@@ -73,6 +73,16 @@ Compare that to Mailchimp at ~$350/month for 50,000 contacts, or Brevo at ~$65/m
 
 ---
 
+## Updating Sesy
+
+Sesy is easily updateable with docker.
+
+> ⚠️ Always read the release notes before updating!
+
+1. `docker compose pull`
+2. `docker compose up -d`
+---
+
 ## Roadmap
 
 - [x] Configure AWS SES fully from the app
