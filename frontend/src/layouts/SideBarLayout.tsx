@@ -38,7 +38,7 @@ const SideBarLayout = ({
               </div>
             ) : null}
           </header>
-          <div className="flex flex-1 min-h-0 overflow-hidden pt-0">
+          <div className="flex flex-1 min-h-0 overflow-hidden pt-0 w-full">
             {children}
           </div>
         </div>
