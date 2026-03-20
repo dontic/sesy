@@ -550,8 +550,20 @@ paths:
       - in: path
         name: project_pk
         schema:
-          type: string
+          type: integer
         required: true
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: subscribed
+        schema:
+          type: boolean
+      - in: query
+        name: tag
+        schema:
+          type: string
       tags:
       - Audience Members
       security:
@@ -569,10 +581,12 @@ paths:
       - in: path
         name: project_pk
         schema:
-          type: string
+          type: integer
         required: true
       tags:
       - Audience Members
+      security:
+      - cookieAuth: []
       requestBody:
         content:
           application/json:
@@ -585,8 +599,6 @@ paths:
             schema:
               $ref: '#/components/schemas/AudienceMemberRequest'
         required: true
-      security:
-      - cookieAuth: []
       responses:
         '201':
           content:
@@ -601,12 +613,13 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this audience member.
         required: true
       - in: path
         name: project_pk
         schema:
-          type: string
+          type: integer
         required: true
       tags:
       - Audience Members
@@ -625,12 +638,13 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this audience member.
         required: true
       - in: path
         name: project_pk
         schema:
-          type: string
+          type: integer
         required: true
       tags:
       - Audience Members
@@ -661,12 +675,13 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this audience member.
         required: true
       - in: path
         name: project_pk
         schema:
-          type: string
+          type: integer
         required: true
       tags:
       - Audience Members
@@ -682,7 +697,7 @@ paths:
       - in: path
         name: project_pk
         schema:
-          type: string
+          type: integer
         required: true
       tags:
       - Audience Members

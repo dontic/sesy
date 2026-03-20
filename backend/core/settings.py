@@ -170,6 +170,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.sessions",
     "django.contrib.staticfiles",
+    "django.contrib.postgres",
     # ----------------------------------- CORS ----------------------------------- #
     "corsheaders",  # Django CORS Headers
     # ----------------------------------- REST ----------------------------------- #

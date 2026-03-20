@@ -5,6 +5,7 @@ import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from django.db import IntegrityError
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -20,6 +21,7 @@ from drf_spectacular.utils import (
 )
 from rest_framework import serializers as drf_serializers
 from rest_framework.request import Request
+from .filters import AudienceMemberFilter, UnaccentSearchFilter
 from .models import (
     ApiKey,
     Project,
@@ -118,6 +120,9 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
     serializer_class = AudienceMemberSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = AudienceMemberPagination
+    filter_backends = [UnaccentSearchFilter, DjangoFilterBackend]
+    search_fields = ["email", "first_name", "last_name"]
+    filterset_class = AudienceMemberFilter
     http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
 
     def _get_project(self):
@@ -130,6 +135,8 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
         return project
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            return AudienceMember.objects.none()
         return AudienceMember.objects.filter(
             project=self._get_project()
         ).prefetch_related("tags")

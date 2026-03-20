@@ -92,8 +92,9 @@ const Campaigns = () => {
 
   return (
     <SideBarLayout title="Campaigns" actions={headerActions}>
-      <div className="flex flex-col gap-4 items-center w-full overflow-y-auto p-4">
-        <Table className="max-w-5xl">
+      <div className="flex flex-col gap-4 items-center h-full w-full p-4">
+        <div className="flex-1 min-h-0 w-full max-w-5xl overflow-y-auto">
+        <Table>
           <TableHeader className="sticky top-0 bg-background z-10">
             <TableRow>
               <TableHead>Name</TableHead>
@@ -219,6 +220,7 @@ const Campaigns = () => {
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       {currentProject && (

@@ -13,7 +13,7 @@ import { customAxiosInstance } from "../../axios";
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 export const sesyProjectsMembersList = (
-  projectPk: string,
+  projectPk: number,
   params?: SesyProjectsMembersListParams,
   options?: SecondParameter<
     typeof customAxiosInstance<PaginatedAudienceMemberList>
@@ -25,7 +25,7 @@ export const sesyProjectsMembersList = (
   );
 };
 export const sesyProjectsMembersCreate = (
-  projectPk: string,
+  projectPk: number,
   audienceMemberRequest: AudienceMemberRequest,
   options?: SecondParameter<typeof customAxiosInstance<AudienceMember>>,
 ) => {
@@ -40,8 +40,8 @@ export const sesyProjectsMembersCreate = (
   );
 };
 export const sesyProjectsMembersRetrieve = (
-  projectPk: string,
-  id: string,
+  projectPk: number,
+  id: number,
   options?: SecondParameter<typeof customAxiosInstance<AudienceMember>>,
 ) => {
   return customAxiosInstance<AudienceMember>(
@@ -50,8 +50,8 @@ export const sesyProjectsMembersRetrieve = (
   );
 };
 export const sesyProjectsMembersUpdate = (
-  projectPk: string,
-  id: string,
+  projectPk: number,
+  id: number,
   audienceMemberRequest: AudienceMemberRequest,
   options?: SecondParameter<typeof customAxiosInstance<AudienceMember>>,
 ) => {
@@ -66,8 +66,8 @@ export const sesyProjectsMembersUpdate = (
   );
 };
 export const sesyProjectsMembersDestroy = (
-  projectPk: string,
-  id: string,
+  projectPk: number,
+  id: number,
   options?: SecondParameter<typeof customAxiosInstance<void>>,
 ) => {
   return customAxiosInstance<void>(
@@ -76,7 +76,7 @@ export const sesyProjectsMembersDestroy = (
   );
 };
 export const sesyProjectsMembersUploadCsvCreate = (
-  projectPk: string,
+  projectPk: number,
   audienceMemberCsvUploadRequest: AudienceMemberCsvUploadRequest,
   options?: SecondParameter<
     typeof customAxiosInstance<SesyProjectsMembersUploadCsvCreate200>
