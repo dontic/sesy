@@ -265,7 +265,6 @@ class PublicAudienceMemberSerializer(serializers.Serializer):
     email = serializers.EmailField()
     first_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default="")
     last_name = serializers.CharField(max_length=150, required=False, allow_blank=True, default="")
-    subscribed = serializers.BooleanField(required=False, default=True)
     tags = serializers.ListField(
         child=serializers.CharField(max_length=100),
         required=False,
