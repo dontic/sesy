@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -417,6 +419,7 @@ const SesSchema = z.object({
 
 function StepSes({ onComplete }: { onComplete: () => void }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [credentialsInvalid, setCredentialsInvalid] = useState(false);
 
   const form = useForm<z.infer<typeof SesSchema>>({
     resolver: zodResolver(SesSchema),
@@ -425,12 +428,19 @@ function StepSes({ onComplete }: { onComplete: () => void }) {
 
   const onSubmit = async (values: z.infer<typeof SesSchema>) => {
     setIsSubmitting(true);
+    setCredentialsInvalid(false);
     try {
-      await sesySesConfigurationUpdate({
+      const result = await sesySesConfigurationUpdate({
         aws_access_key_id: values.aws_access_key_id,
         aws_secret_access_key: values.aws_secret_access_key,
         aws_region: values.aws_region
       } as Parameters<typeof sesySesConfigurationUpdate>[0]);
+
+      if (!result.config_valid) {
+        setCredentialsInvalid(true);
+        return;
+      }
+
       toast.success("AWS SES configured");
       onComplete();
     } catch {
@@ -459,6 +469,15 @@ function StepSes({ onComplete }: { onComplete: () => void }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {credentialsInvalid && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              The credentials could not be validated. Please check your AWS
+              Access Key ID, Secret Access Key, and region and try again.
+            </AlertDescription>
+          </Alert>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
