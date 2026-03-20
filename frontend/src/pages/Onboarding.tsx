@@ -228,7 +228,6 @@ function StepUsername({ onComplete }: { onComplete: () => void }) {
 
 const PasswordSchema = z
   .object({
-    old_password: z.string().min(1, "Current password is required"),
     new_password1: z.string().min(8, "Password must be at least 8 characters"),
     new_password2: z.string().min(1, "Please confirm your new password")
   })
@@ -242,13 +241,13 @@ function StepPassword({ onComplete }: { onComplete: () => void }) {
 
   const form = useForm<z.infer<typeof PasswordSchema>>({
     resolver: zodResolver(PasswordSchema),
-    defaultValues: { old_password: "", new_password1: "", new_password2: "" }
+    defaultValues: { new_password1: "", new_password2: "" }
   });
 
   const onSubmit = async (values: z.infer<typeof PasswordSchema>) => {
     setIsSubmitting(true);
     try {
-      await authPasswordChangeCreate(values);
+      await authPasswordChangeCreate({ old_password: "admin", ...values });
       toast.success("Password updated");
       onComplete();
     } catch {
@@ -270,19 +269,6 @@ function StepPassword({ onComplete }: { onComplete: () => void }) {
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="old_password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Current Password</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name="new_password1"
@@ -423,7 +409,7 @@ function StepSes({ onComplete }: { onComplete: () => void }) {
 
   const form = useForm<z.infer<typeof SesSchema>>({
     resolver: zodResolver(SesSchema),
-    defaultValues: { aws_access_key_id: "", aws_secret_access_key: "", aws_region: "us-east-1" }
+    defaultValues: { aws_access_key_id: "", aws_secret_access_key: "", aws_region: "" }
   });
 
   const onSubmit = async (values: z.infer<typeof SesSchema>) => {
