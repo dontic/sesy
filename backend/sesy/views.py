@@ -21,7 +21,7 @@ from drf_spectacular.utils import (
 )
 from rest_framework import serializers as drf_serializers
 from rest_framework.request import Request
-from .filters import AudienceMemberFilter
+from .filters import AudienceMemberFilter, UnaccentSearchFilter
 from .models import (
     ApiKey,
     Project,
@@ -120,7 +120,8 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
     serializer_class = AudienceMemberSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = AudienceMemberPagination
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [UnaccentSearchFilter, DjangoFilterBackend]
+    search_fields = ["email", "first_name", "last_name"]
     filterset_class = AudienceMemberFilter
     http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
 
