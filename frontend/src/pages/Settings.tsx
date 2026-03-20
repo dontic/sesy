@@ -807,7 +807,6 @@ const AddMemberSection = ({ apiKey }: { apiKey: ApiKey | undefined }) => {
       email: "user@example.com",
       first_name: "Jane",
       last_name: "Doe",
-      subscribed: true,
       tags: ["newsletter", "vip"]
     },
     null,
@@ -864,7 +863,6 @@ const AddMemberSection = ({ apiKey }: { apiKey: ApiKey | undefined }) => {
                 { field: "email", type: "string (email)", required: true },
                 { field: "first_name", type: "string", required: false },
                 { field: "last_name", type: "string", required: false },
-                { field: "subscribed", type: "boolean", required: false },
                 { field: "tags", type: "string[]", required: false }
               ].map(({ field, type, required }) => (
                 <tr key={field}>

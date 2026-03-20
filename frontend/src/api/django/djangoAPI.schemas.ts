@@ -212,7 +212,6 @@ export interface PublicAudienceMemberRequest {
   first_name?: string;
   /** @maxLength 150 */
   last_name?: string;
-  subscribed?: boolean;
   tags?: string[];
 }
 

@@ -577,7 +577,7 @@ class PublicAudienceMemberView(APIView):
                 email=data["email"],
                 first_name=data["first_name"],
                 last_name=data["last_name"],
-                subscribed=data["subscribed"],
+                subscribed=True,
             )
         except IntegrityError:
             return Response(
