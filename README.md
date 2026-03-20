@@ -42,13 +42,15 @@ Compare that to Mailchimp at ~$350/month for 50,000 contacts, or Brevo at ~$65/m
 
 ## Features
 
-- **AWS SES management** - Configure credentials, region, and sending rates directly from the UI
-- **Domain verification** - Guided DNS setup with real-time validation for TXT, DKIM, SPF, DMARC, and MAIL FROM records
+- **AWS SES management** - Sesy configures everything in AWS for you, because we all hate AWS console. Just set your AWS credentials and region
+- **Domain verification** - Guided DNS record setup so you can send emails from your domain
 - **Audience management** - Import contacts via CSV, organize with tags, track subscription status
-- **Campaign editor** - HTML email editor with per-subscriber personalization (i.e. `first_name`) and automatic unsubscribe footers
-- **Async sending** - Campaigns send in the background via Celery, respecting your SES rate limits
-- **REST API** - Full API with OpenAPI/Swagger docs and API key authentication
-- **One-command deploy** - Complete stack (app, worker, scheduler, DB, cache, proxy) via Docker Compose
+- **Campaign editor** - Simple HTML email editor with per-subscriber personalization (i.e. `first_name`) and automatic unsubscribe footers
+- **Async sending** - Campaigns send in the background, respecting your SES rate limits
+- **API** - Full API with docs and API key authentication, so you can manage audience members programatically
+- **Campaign statistics** - _[In the works]_ See how many opens and clicks your campaign had.
+- **Transactional emails** - _[In the works]_ Send transactional emails (login codes, password resets, etc.)
+- **One-command deployment** - Complete stack (app, worker, scheduler, DB, cache, proxy) via Docker Compose
 
 ---
 
