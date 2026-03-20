@@ -1,6 +1,6 @@
 # docker-compose.yml
 
-name: django-backend
+name: sesy-backend
 services:
   redis:
     image: redis:alpine
