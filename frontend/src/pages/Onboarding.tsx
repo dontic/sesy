@@ -624,7 +624,11 @@ const Onboarding = () => {
   }, []);
 
   const handleStepComplete = () => {
-    loadStatus();
+    if (currentStep === 5) {
+      navigate("/campaigns", { replace: true });
+    } else {
+      loadStatus();
+    }
   };
 
   if (currentStep === null) {
