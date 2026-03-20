@@ -21,11 +21,12 @@ class TagSerializer(serializers.ModelSerializer):
         qs = Tag.objects.filter(project=project, name=value)
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
-        if qs.exists():
-            raise serializers.ValidationError(
-                "A tag with this name already exists in this project.",
-                code="conflict",
-            )
+        conflicting_tag = qs.first()
+        if conflicting_tag:
+            raise serializers.ValidationError({
+                "message": "A tag with this name already exists in this project.",
+                "conflicting_tag_pk": conflicting_tag.pk,
+            })
         return value
 
     def create(self, validated_data):

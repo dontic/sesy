@@ -77,7 +77,24 @@ class ProjectViewSet(viewsets.ModelViewSet):
     list=extend_schema(tags=["Tags"]),
     create=extend_schema(tags=["Tags"]),
     retrieve=extend_schema(tags=["Tags"]),
-    update=extend_schema(tags=["Tags"]),
+    update=extend_schema(
+        tags=["Tags"],
+        responses={
+            200: TagSerializer,
+            400: inline_serializer(
+                name="TagNameConflictError",
+                fields={
+                    "name": inline_serializer(
+                        name="TagNameConflictDetail",
+                        fields={
+                            "message": drf_serializers.CharField(),
+                            "conflicting_tag_pk": drf_serializers.IntegerField(),
+                        },
+                    )
+                },
+            ),
+        },
+    ),
     destroy=extend_schema(tags=["Tags"]),
 )
 class TagViewSet(viewsets.ModelViewSet):
