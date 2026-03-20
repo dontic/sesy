@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Copy, Check, Trash2, RefreshCw } from "lucide-react";
+import { AlertTriangle, Copy, Check, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,7 +54,11 @@ import type {
   VerifiedDomain
 } from "@/api/django/djangoAPI.schemas";
 import { useProjectStore } from "@/stores/ProjectStore";
-import { sesyApiKeyRetrieve, sesyApiKeyCreate } from "@/api/django/api-key/api-key";
+import {
+  sesyApiKeysList,
+  sesyApiKeysCreate,
+  sesyApiKeysDestroy
+} from "@/api/django/api-key/api-key";
 import type { ApiKey } from "@/api/django/djangoAPI.schemas";
 
 interface DnsRecord {
@@ -790,7 +794,7 @@ const UsersTab = () => {
 
 const API_BASE_URL = import.meta.env.DEV ? "http://localhost:8000" : `${window.location.origin}/api`;
 
-const ApiDocsSection = ({ apiKey }: { apiKey: ApiKey | null }) => {
+const ApiDocsSection = ({ apiKey }: { apiKey: ApiKey | undefined }) => {
   const exampleKey = apiKey?.key ?? "<your-api-key>";
   const exampleBody = JSON.stringify(
     {
@@ -918,17 +922,19 @@ const ApiDocsSection = ({ apiKey }: { apiKey: ApiKey | null }) => {
 };
 
 const ApiTab = () => {
-  const [apiKey, setApiKey] = useState<ApiKey | null>(null);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const data = await sesyApiKeyRetrieve();
-        setApiKey(data);
+        const data = await sesyApiKeysList();
+        setApiKeys(data);
       } catch {
-        setApiKey(null);
+        setApiKeys([]);
       } finally {
         setIsLoading(false);
       }
@@ -936,95 +942,122 @@ const ApiTab = () => {
     load();
   }, []);
 
-  const handleGenerate = async () => {
-    setIsGenerating(true);
+  const handleCreate = async () => {
+    setIsCreating(true);
     try {
-      const data = await sesyApiKeyCreate();
-      setApiKey(data);
-      toast.success(apiKey ? "API key regenerated" : "API key generated");
+      const data = await sesyApiKeysCreate({ name: newKeyName });
+      setApiKeys((prev) => [...prev, data]);
+      setNewKeyName("");
+      toast.success("API key created");
     } catch {
-      toast.error("Failed to generate API key. Please try again.");
+      toast.error("Failed to create API key. Please try again.");
     } finally {
-      setIsGenerating(false);
+      setIsCreating(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    setDeletingId(id);
+    try {
+      await sesyApiKeysDestroy(id);
+      setApiKeys((prev) => prev.filter((k) => k.pk !== id));
+      toast.success("API key deleted");
+    } catch {
+      toast.error("Failed to delete API key. Please try again.");
+    } finally {
+      setDeletingId(null);
     }
   };
 
   return (
     <div className="space-y-6">
-    <Card className="w-full max-w-lg">
-      <CardHeader>
-        <CardTitle>API Key</CardTitle>
-        <CardDescription>
-          Use this key to authenticate requests to the Sesy API.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {!isLoading && apiKey && (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">Your API key</p>
-            <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2">
-              <code className="flex-1 text-xs font-mono break-all select-all">
-                {apiKey.key}
-              </code>
-              <CopyButton text={apiKey.key} />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Last generated:{" "}
-              {new Date(apiKey.updated_at).toLocaleDateString()}
+      <Card className="w-full max-w-lg">
+        <CardHeader>
+          <CardTitle>API Keys</CardTitle>
+          <CardDescription>
+            Manage API keys used to authenticate requests to the Sesy API.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLoading && (
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          )}
+          {!isLoading && apiKeys.length === 0 && (
+            <p className="text-sm text-muted-foreground">
+              No API keys yet. Create one to get started.
             </p>
+          )}
+          {!isLoading && apiKeys.length > 0 && (
+            <div className="space-y-3">
+              {apiKeys.map((key) => (
+                <div key={key.pk} className="rounded-md border p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-sm font-medium">{key.name || `Key #${key.pk}`}</span>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-destructive hover:cursor-pointer"
+                          disabled={deletingId === key.pk}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete API key?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete the key{key.name ? ` "${key.name}"` : ""}. Any
+                            integrations using it will stop working immediately.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(key.pk)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2">
+                    <code className="flex-1 text-xs font-mono break-all select-all">
+                      {key.key}
+                    </code>
+                    <CopyButton text={key.key} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Created by {key.created_by} · {new Date(key.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+          <Separator />
+          <div className="flex gap-2">
+            <Input
+              placeholder="Key name (e.g. Production)"
+              value={newKeyName}
+              onChange={(e) => setNewKeyName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && !isCreating && handleCreate()}
+              className="flex-1"
+            />
+            <Button
+              className="hover:cursor-pointer"
+              loading={isCreating}
+              disabled={isLoading || !newKeyName.trim()}
+              onClick={handleCreate}
+            >
+              Create
+            </Button>
           </div>
-        )}
-        {!isLoading && !apiKey && (
-          <p className="text-sm text-muted-foreground">
-            No API key yet. Generate one to get started.
-          </p>
-        )}
-        {apiKey ? (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="outline"
-                className="hover:cursor-pointer"
-                loading={isGenerating}
-                disabled={isLoading}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Regenerate API Key
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Regenerate API key?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will invalidate your existing API key. Any integrations
-                  using the current key will stop working immediately.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleGenerate}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  Regenerate
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        ) : (
-          <Button
-            className="hover:cursor-pointer"
-            loading={isGenerating}
-            disabled={isLoading}
-            onClick={handleGenerate}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Generate API Key
-          </Button>
-        )}
-      </CardContent>
-    </Card>
-    <ApiDocsSection apiKey={apiKey} />
+        </CardContent>
+      </Card>
+      <ApiDocsSection apiKey={apiKeys[0]} />
     </div>
   );
 };
