@@ -29,22 +29,18 @@ const ProtectedLayout = () => {
     const controller = new AbortController();
 
     const fetchData = async () => {
-      // Skip if data is already loaded in the store
-      if (user) {
-        setIsAuthenticated(true);
-        setIsLoading(false);
-        return;
-      }
-
       setIsLoading(true);
 
       try {
-        const userDetails = await authMeRetrieve({
-          signal: controller.signal
-        });
+        // Skip auth API call if user is already in the store
+        if (!user) {
+          const userDetails = await authMeRetrieve({
+            signal: controller.signal
+          });
+          console.debug("User logged in:", userDetails);
+          setUser(userDetails);
+        }
 
-        console.debug("User logged in:", userDetails);
-        setUser(userDetails);
         setIsAuthenticated(true);
 
         const onboarding = await sesyOnboardingRetrieve({
