@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   Form,
   FormControl,
@@ -29,9 +31,23 @@ import {
   sesySesConfigurationUpdate
 } from "@/api/django/ses-configuration/ses-configuration";
 import { sesyProjectsCreate, sesyProjectsList } from "@/api/django/projects/projects";
-import { sesyProjectsDomainCreate } from "@/api/django/verified-domains/verified-domains";
+import {
+  sesyProjectsDomainCreate,
+  sesyProjectsDomainRetrieve
+} from "@/api/django/verified-domains/verified-domains";
 import { sesyOnboardingRetrieve } from "@/api/django/onboarding/onboarding";
-import type { OnboardingResponse } from "@/api/django/djangoAPI.schemas";
+import type {
+  OnboardingResponse,
+  VerifiedDomain
+} from "@/api/django/djangoAPI.schemas";
+
+interface DnsRecord {
+  type: string;
+  name: string;
+  value: string;
+  priority?: number;
+  status: "present" | "missing";
+}
 
 /* -------------------------------------------------------------------------- */
 /*                              Step definitions                              */
@@ -509,10 +525,61 @@ const DomainSchema = z.object({
     .max(255, "Must be 255 characters or less")
 });
 
-function StepDomain({ onComplete }: { onComplete: () => void }) {
+function DnsRecordsList({ domain }: { domain: VerifiedDomain }) {
+  const dnsRecords = (domain.dns_records as unknown as DnsRecord[]) ?? [];
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Add the following DNS records at your domain registrar to verify{" "}
+        <strong>{domain.domain}</strong>.
+      </p>
+
+      {dnsRecords.length > 0 && (
+        <div className="space-y-3">
+          {dnsRecords.map((record, i) => (
+            <div key={i} className="rounded-md border p-3 space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <Badge variant="outline">{record.type}</Badge>
+                <Badge
+                  variant={
+                    record.status === "present" ? "success" : "destructive"
+                  }
+                >
+                  {record.status}
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-xs">Name</p>
+                <p className="font-mono text-xs break-all">
+                  {record.name.replace(`.${domain.domain}`, "")}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-muted-foreground text-xs">Value</p>
+                <p className="font-mono text-xs break-all">{record.value}</p>
+              </div>
+              {record.priority !== undefined && (
+                <div className="space-y-1">
+                  <p className="text-muted-foreground text-xs">Priority</p>
+                  <p className="font-mono text-xs">{record.priority}</p>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StepDomain() {
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRechecking, setIsRechecking] = useState(false);
   const [projectPk, setProjectPk] = useState<number | null>(null);
   const [isLoadingProject, setIsLoadingProject] = useState(true);
+  const [domain, setDomain] = useState<VerifiedDomain | null>(null);
 
   const form = useForm<z.infer<typeof DomainSchema>>({
     resolver: zodResolver(DomainSchema),
@@ -534,13 +601,28 @@ function StepDomain({ onComplete }: { onComplete: () => void }) {
     if (!projectPk) return;
     setIsSubmitting(true);
     try {
-      await sesyProjectsDomainCreate(projectPk, { domain: values.domain });
-      toast.success("Domain configured");
-      onComplete();
+      const created = await sesyProjectsDomainCreate(projectPk, {
+        domain: values.domain
+      });
+      setDomain(created);
     } catch {
       toast.error("Failed to configure domain. Please try again.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleRecheck = async () => {
+    if (!projectPk) return;
+    setIsRechecking(true);
+    try {
+      const updated = await sesyProjectsDomainRetrieve(projectPk);
+      setDomain(updated);
+      toast.success("DNS records refreshed");
+    } catch {
+      toast.error("Failed to refresh DNS records. Please try again.");
+    } finally {
+      setIsRechecking(false);
     }
   };
 
@@ -562,36 +644,60 @@ function StepDomain({ onComplete }: { onComplete: () => void }) {
       <CardHeader>
         <CardTitle>Set up your sending domain</CardTitle>
         <CardDescription>
-          Add a domain to send emails from. After this step, you will need to
-          add DNS records at your registrar to verify the domain.
+          {domain
+            ? "Add these DNS records at your registrar to verify your domain."
+            : "Add a domain to send emails from. You will need to add DNS records at your registrar to verify it."}
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="domain"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Domain</FormLabel>
-                  <FormControl>
-                    <Input placeholder="example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button
-              type="submit"
-              className="w-full"
-              loading={isSubmitting}
-              disabled={!projectPk}
-            >
-              Add Domain
-            </Button>
-          </form>
-        </Form>
+      <CardContent className="space-y-4">
+        {!domain ? (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="domain"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Domain</FormLabel>
+                    <FormControl>
+                      <Input placeholder="example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="submit"
+                className="w-full"
+                loading={isSubmitting}
+                disabled={!projectPk}
+              >
+                Add Domain
+              </Button>
+            </form>
+          </Form>
+        ) : (
+          <>
+            <DnsRecordsList domain={domain} />
+            <Separator />
+            <div className="flex flex-col gap-2">
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleRecheck}
+                loading={isRechecking}
+              >
+                Re-check DNS records
+              </Button>
+              <Button
+                className="w-full"
+                onClick={() => navigate("/campaigns", { replace: true })}
+              >
+                Complete later in Settings
+              </Button>
+            </div>
+          </>
+        )}
       </CardContent>
     </>
   );
@@ -656,7 +762,7 @@ const Onboarding = () => {
           {currentStep === 2 && <StepPassword onComplete={handleStepComplete} />}
           {currentStep === 3 && <StepProject onComplete={handleStepComplete} />}
           {currentStep === 4 && <StepSes onComplete={handleStepComplete} />}
-          {currentStep === 5 && <StepDomain onComplete={handleStepComplete} />}
+          {currentStep === 5 && <StepDomain />}
         </Card>
       </div>
     </div>
