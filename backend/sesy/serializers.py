@@ -16,6 +16,18 @@ class TagSerializer(serializers.ModelSerializer):
         fields = ["pk", "name", "created_at"]
         read_only_fields = ["pk", "created_at"]
 
+    def validate_name(self, value):
+        project = self.context["project"]
+        qs = Tag.objects.filter(project=project, name=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(
+                "A tag with this name already exists in this project.",
+                code="conflict",
+            )
+        return value
+
     def create(self, validated_data):
         project = self.context["project"]
         return Tag.objects.create(project=project, **validated_data)
