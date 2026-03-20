@@ -668,7 +668,7 @@ function StepDomain() {
             : "Add a domain to send emails from. You will need to add DNS records at your registrar to verify it."}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="flex flex-col min-h-0 overflow-hidden space-y-4">
         {!domain ? (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -696,26 +696,41 @@ function StepDomain() {
             </form>
           </Form>
         ) : (
-          <>
-            <DnsRecordsList domain={domain} />
-            <Separator />
-            <div className="flex flex-col gap-2">
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={handleRecheck}
-                loading={isRechecking}
-              >
-                Re-check DNS records
-              </Button>
-              <Button
-                className="w-full"
-                onClick={() => navigate("/campaigns", { replace: true })}
-              >
-                Complete later in Settings
-              </Button>
+          <div className="flex flex-col min-h-0">
+            <div className="overflow-y-auto flex-1 pr-1">
+              <DnsRecordsList domain={domain} />
             </div>
-          </>
+            <Separator className="my-4 shrink-0" />
+            <div className="flex flex-col gap-2 shrink-0">
+              {(domain.dns_records as unknown as DnsRecord[])?.every(
+                (r) => r.status === "present"
+              ) ? (
+                <Button
+                  className="w-full"
+                  onClick={() => navigate("/campaigns", { replace: true })}
+                >
+                  Continue
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleRecheck}
+                    loading={isRechecking}
+                  >
+                    Re-check DNS records
+                  </Button>
+                  <Button
+                    className="w-full"
+                    onClick={() => navigate("/campaigns", { replace: true })}
+                  >
+                    Complete later in Settings
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
         )}
       </CardContent>
     </>
@@ -766,8 +781,8 @@ const Onboarding = () => {
 
   return (
     <div className="h-screen w-full flex items-center justify-center bg-gray-100 p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-6">
+      <div className="w-full max-w-md flex flex-col max-h-[calc(100vh-2rem)]">
+        <div className="text-center mb-6 shrink-0">
           <h1 className="text-2xl font-bold tracking-tight">Welcome to Sesy</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Complete setup to start sending emails
@@ -776,7 +791,7 @@ const Onboarding = () => {
 
         <StepProgress currentStep={currentStep} />
 
-        <Card>
+        <Card className="flex flex-col min-h-0 overflow-hidden">
           {currentStep === 1 && <StepUsername onComplete={handleStepComplete} />}
           {currentStep === 2 && <StepPassword onComplete={handleStepComplete} />}
           {currentStep === 3 && <StepProject onComplete={handleStepComplete} />}
