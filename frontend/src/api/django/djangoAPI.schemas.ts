@@ -345,6 +345,9 @@ export type SesyProjectsMembersListParams = {
    * Number of results to return per page.
    */
   page_size?: number;
+  search?: string;
+  subscribed?: boolean;
+  tag?: string;
 };
 
 export type SesyProjectsMembersUploadCsvCreate200 = {
