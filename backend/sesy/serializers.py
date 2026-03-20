@@ -252,10 +252,12 @@ class AudienceMemberCsvUploadSerializer(serializers.Serializer):
 
 
 class ApiKeySerializer(serializers.ModelSerializer):
+    created_by = serializers.EmailField(source="user.email", read_only=True)
+
     class Meta:
         model = ApiKey
-        fields = ["pk", "key", "created_at", "updated_at"]
-        read_only_fields = ["pk", "key", "created_at", "updated_at"]
+        fields = ["pk", "name", "key", "created_by", "created_at", "updated_at"]
+        read_only_fields = ["pk", "key", "created_by", "created_at", "updated_at"]
 
 
 class PublicAudienceMemberSerializer(serializers.Serializer):

@@ -5,7 +5,7 @@ import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from django.db import IntegrityError
 from django.utils import timezone
-from rest_framework import viewsets, permissions, status
+from rest_framework import mixins, viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.pagination import PageNumberPagination
@@ -426,37 +426,20 @@ class UnsubscribeView(APIView):
         return Response({"detail": "You have been unsubscribed successfully."})
 
 
-class ApiKeyView(APIView):
+@extend_schema_view(
+    list=extend_schema(tags=["API Key"], description="List all API keys in the application."),
+    create=extend_schema(tags=["API Key"], description="Create a new named API key."),
+    destroy=extend_schema(tags=["API Key"], description="Delete an API key."),
+)
+class ApiKeyViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ApiKeySerializer
 
-    @extend_schema(
-        tags=["API Key"],
-        responses={200: ApiKeySerializer, 404: None},
-    )
-    def get(self, request):
-        try:
-            api_key = request.user.api_key
-        except ApiKey.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        return Response(ApiKeySerializer(api_key).data)
+    def get_queryset(self):
+        return ApiKey.objects.select_related("user").all()
 
-    @extend_schema(
-        tags=["API Key"],
-        request=None,
-        responses={200: ApiKeySerializer},
-        description="Create an API key if none exists, or regenerate the existing one.",
-    )
-    def post(self, request):
-        try:
-            api_key = request.user.api_key
-            api_key.key = ApiKey.generate_key()
-            api_key.save(update_fields=["key", "updated_at"])
-        except ApiKey.DoesNotExist:
-            api_key = ApiKey.objects.create(
-                user=request.user,
-                key=ApiKey.generate_key(),
-            )
-        return Response(ApiKeySerializer(api_key).data)
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user, key=ApiKey.generate_key())
 
 
 class PublicAudienceMemberView(APIView):
@@ -483,19 +466,14 @@ class PublicAudienceMemberView(APIView):
         if not raw_key:
             return Response({"detail": "API key is required."}, status=status.HTTP_401_UNAUTHORIZED)
 
-        try:
-            api_key = ApiKey.objects.select_related("user").get(key=raw_key)
-        except ApiKey.DoesNotExist:
+        if not ApiKey.objects.filter(key=raw_key).exists():
             return Response({"detail": "Invalid API key."}, status=status.HTTP_401_UNAUTHORIZED)
 
         serializer = PublicAudienceMemberSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
 
-        project = Project.objects.filter(
-            pk=data["project_pk"],
-            owner=api_key.user,
-        ).first()
+        project = Project.objects.filter(pk=data["project_pk"]).first()
         if not project:
             return Response({"detail": "Project not found."}, status=status.HTTP_404_NOT_FOUND)
 

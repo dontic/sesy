@@ -288,17 +288,18 @@ class AudienceMember(models.Model):
 
 
 class ApiKey(models.Model):
-    user = models.OneToOneField(
+    user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="api_key",
+        related_name="api_keys",
     )
+    name = models.CharField(max_length=100, default="")
     key = models.CharField(max_length=64, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"API Key for {self.user}"
+        return f"{self.name} (created by {self.user})"
 
     @staticmethod
     def generate_key():
