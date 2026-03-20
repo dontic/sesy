@@ -12,7 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertTriangle, Copy, Check, Trash2 } from "lucide-react";
+import { AlertTriangle, Copy, Check, Trash2, ChevronDown } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -794,7 +799,7 @@ const UsersTab = () => {
 
 const API_BASE_URL = import.meta.env.DEV ? "http://localhost:8000" : `${window.location.origin}/api`;
 
-const ApiDocsSection = ({ apiKey }: { apiKey: ApiKey | undefined }) => {
+const AddMemberSection = ({ apiKey }: { apiKey: ApiKey | undefined }) => {
   const exampleKey = apiKey?.key ?? "<your-api-key>";
   const exampleBody = JSON.stringify(
     {
@@ -814,108 +819,126 @@ const ApiDocsSection = ({ apiKey }: { apiKey: ApiKey | undefined }) => {
   -d '${JSON.stringify({ project_pk: 1, email: "user@example.com" })}'`;
 
   return (
+    <div className="space-y-6 text-sm">
+      {/* Endpoint */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2 font-mono text-xs">
+          <Badge variant="outline" className="shrink-0">POST</Badge>
+          <span className="break-all">{API_BASE_URL}/sesy/public/members/</span>
+          <CopyButton text={`${API_BASE_URL}/sesy/public/members/`} />
+        </div>
+        <p className="text-muted-foreground text-xs">
+          Creates an audience member in a project. Tags are created
+          automatically if they don't exist.
+        </p>
+      </div>
+
+      <Separator />
+
+      {/* Authentication */}
+      <div className="space-y-2">
+        <p className="font-medium">Authentication</p>
+        <div className="rounded-md border bg-muted px-3 py-2 font-mono text-xs flex items-start gap-1">
+          <span className="flex-1 break-all">X-API-Key: {exampleKey}</span>
+          <CopyButton text={`X-API-Key: ${exampleKey}`} />
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Request body */}
+      <div className="space-y-2">
+        <p className="font-medium">Request Body</p>
+        <div className="rounded-md border overflow-hidden text-xs">
+          <table className="w-full">
+            <thead className="bg-muted">
+              <tr>
+                <th className="text-left px-3 py-2 font-medium">Field</th>
+                <th className="text-left px-3 py-2 font-medium">Type</th>
+                <th className="text-left px-3 py-2 font-medium">Required</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {[
+                { field: "project_pk", type: "integer", required: true },
+                { field: "email", type: "string (email)", required: true },
+                { field: "first_name", type: "string", required: false },
+                { field: "last_name", type: "string", required: false },
+                { field: "subscribed", type: "boolean", required: false },
+                { field: "tags", type: "string[]", required: false }
+              ].map(({ field, type, required }) => (
+                <tr key={field}>
+                  <td className="px-3 py-2 font-mono">{field}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{type}</td>
+                  <td className="px-3 py-2">
+                    {required ? (
+                      <Badge variant="secondary" className="text-xs">required</Badge>
+                    ) : (
+                      <span className="text-muted-foreground">optional</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Example */}
+      <div className="space-y-2">
+        <p className="font-medium">Example Request Body</p>
+        <div className="relative rounded-md border bg-muted p-3 font-mono text-xs">
+          <pre className="overflow-x-auto whitespace-pre-wrap break-all">
+            {exampleBody}
+          </pre>
+          <span className="absolute top-2 right-2">
+            <CopyButton text={exampleBody} />
+          </span>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* cURL */}
+      <div className="space-y-2">
+        <p className="font-medium">cURL Example</p>
+        <div className="relative rounded-md border bg-muted p-3 font-mono text-xs">
+          <pre className="overflow-x-auto whitespace-pre-wrap break-all">
+            {curlExample}
+          </pre>
+          <span className="absolute top-2 right-2">
+            <CopyButton text={curlExample} />
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ApiDocsSection = ({ apiKey }: { apiKey: ApiKey | undefined }) => {
+  return (
     <Card className="w-full max-w-lg">
       <CardHeader>
         <CardTitle>API Reference</CardTitle>
         <CardDescription>
-          Use the public API to programmatically add audience members.
+          Use the public API to programmatically manage your audience.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6 text-sm">
-        {/* Endpoint */}
-        <div className="space-y-2">
-          <p className="font-medium">Add Audience Member</p>
-          <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2 font-mono text-xs">
-            <Badge variant="outline" className="shrink-0">POST</Badge>
-            <span className="break-all">{API_BASE_URL}/sesy/public/members/</span>
-            <CopyButton text={`${API_BASE_URL}/sesy/public/members/`} />
-          </div>
-          <p className="text-muted-foreground text-xs">
-            Creates an audience member in a project. Tags are created
-            automatically if they don't exist.
-          </p>
-        </div>
-
-        <Separator />
-
-        {/* Authentication */}
-        <div className="space-y-2">
-          <p className="font-medium">Authentication</p>
-          <div className="rounded-md border bg-muted px-3 py-2 font-mono text-xs flex items-start gap-1">
-            <span className="flex-1 break-all">X-API-Key: {exampleKey}</span>
-            <CopyButton text={`X-API-Key: ${exampleKey}`} />
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Request body */}
-        <div className="space-y-2">
-          <p className="font-medium">Request Body</p>
-          <div className="rounded-md border overflow-hidden text-xs">
-            <table className="w-full">
-              <thead className="bg-muted">
-                <tr>
-                  <th className="text-left px-3 py-2 font-medium">Field</th>
-                  <th className="text-left px-3 py-2 font-medium">Type</th>
-                  <th className="text-left px-3 py-2 font-medium">Required</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {[
-                  { field: "project_pk", type: "integer", required: true },
-                  { field: "email", type: "string (email)", required: true },
-                  { field: "first_name", type: "string", required: false },
-                  { field: "last_name", type: "string", required: false },
-                  { field: "subscribed", type: "boolean", required: false },
-                  { field: "tags", type: "string[]", required: false }
-                ].map(({ field, type, required }) => (
-                  <tr key={field}>
-                    <td className="px-3 py-2 font-mono">{field}</td>
-                    <td className="px-3 py-2 text-muted-foreground">{type}</td>
-                    <td className="px-3 py-2">
-                      {required ? (
-                        <Badge variant="secondary" className="text-xs">required</Badge>
-                      ) : (
-                        <span className="text-muted-foreground">optional</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* Example */}
-        <div className="space-y-2">
-          <p className="font-medium">Example Request Body</p>
-          <div className="relative rounded-md border bg-muted p-3 font-mono text-xs">
-            <pre className="overflow-x-auto whitespace-pre-wrap break-all">
-              {exampleBody}
-            </pre>
-            <span className="absolute top-2 right-2">
-              <CopyButton text={exampleBody} />
-            </span>
-          </div>
-        </div>
-
-        <Separator />
-
-        {/* cURL */}
-        <div className="space-y-2">
-          <p className="font-medium">cURL Example</p>
-          <div className="relative rounded-md border bg-muted p-3 font-mono text-xs">
-            <pre className="overflow-x-auto whitespace-pre-wrap break-all">
-              {curlExample}
-            </pre>
-            <span className="absolute top-2 right-2">
-              <CopyButton text={curlExample} />
-            </span>
-          </div>
-        </div>
+      <CardContent className="space-y-2">
+        <Collapsible>
+          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-md border px-4 py-3 text-sm font-medium hover:bg-muted transition-colors">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="shrink-0">POST</Badge>
+              <span>Add Audience Member</span>
+            </div>
+            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200 [[data-state=open]_&]:rotate-180" />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="px-4 pt-4 pb-2">
+            <AddMemberSection apiKey={apiKey} />
+          </CollapsibleContent>
+        </Collapsible>
       </CardContent>
     </Card>
   );
