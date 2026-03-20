@@ -12,8 +12,23 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
-from .models import ApiKey, Project, Tag, AudienceMember, SESConfiguration, Campaign, VerifiedDomain
+from drf_spectacular.utils import (
+    extend_schema,
+    extend_schema_view,
+    inline_serializer,
+    OpenApiParameter,
+)
+from rest_framework import serializers as drf_serializers
+from rest_framework.request import Request
+from .models import (
+    ApiKey,
+    Project,
+    Tag,
+    AudienceMember,
+    SESConfiguration,
+    Campaign,
+    VerifiedDomain,
+)
 from .serializers import (
     ApiKeySerializer,
     ProjectSerializer,
@@ -115,7 +130,9 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
         return project
 
     def get_queryset(self):
-        return AudienceMember.objects.filter(project=self._get_project()).prefetch_related("tags")
+        return AudienceMember.objects.filter(
+            project=self._get_project()
+        ).prefetch_related("tags")
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -152,9 +169,13 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
 
         reader = csv.DictReader(io.StringIO(content))
         required_headers = {"email", "first_name", "last_name"}
-        if not reader.fieldnames or not required_headers.issubset(set(reader.fieldnames)):
+        if not reader.fieldnames or not required_headers.issubset(
+            set(reader.fieldnames)
+        ):
             return Response(
-                {"detail": "CSV must contain exactly these headers: email, first_name, last_name."},
+                {
+                    "detail": "CSV must contain exactly these headers: email, first_name, last_name."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -198,7 +219,9 @@ def _sync_ses_config(config):
         config.config_valid = False
         config.production_status = SESConfiguration.PRODUCTION_STATUS_UNKNOWN
         config.max_sending_rate = None
-        config.save(update_fields=["config_valid", "production_status", "max_sending_rate"])
+        config.save(
+            update_fields=["config_valid", "production_status", "max_sending_rate"]
+        )
         return
 
     client = boto3.client(
@@ -223,7 +246,10 @@ def _sync_ses_config(config):
         config.max_sending_rate = None
 
     update_fields = ["config_valid", "production_status", "max_sending_rate"]
-    if config.max_sending_rate is not None and config.sending_rate > config.max_sending_rate:
+    if (
+        config.max_sending_rate is not None
+        and config.sending_rate > config.max_sending_rate
+    ):
         config.sending_rate = config.max_sending_rate
         update_fields.append("sending_rate")
     config.save(update_fields=update_fields)
@@ -259,7 +285,9 @@ class SESConfigurationView(APIView):
         responses={204: None},
     )
     def delete(self, request):
-        SESConfiguration.objects.filter(pk=SESConfiguration.singleton_instance_id).delete()
+        SESConfiguration.objects.filter(
+            pk=SESConfiguration.singleton_instance_id
+        ).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -284,7 +312,11 @@ class ProjectDomainView(APIView):
         instance.mail_from_status = mail_from_status
         instance.last_checked_at = timezone.now()
         instance.save(update_fields=["status", "mail_from_status", "last_checked_at"])
-        return Response(VerifiedDomainSerializer(instance, context={"dns_check_records": dns_records}).data)
+        return Response(
+            VerifiedDomainSerializer(
+                instance, context={"dns_check_records": dns_records}
+            ).data
+        )
 
     @extend_schema(
         tags=["Verified Domains"],
@@ -299,10 +331,16 @@ class ProjectDomainView(APIView):
 
         config = SESConfiguration.get_solo()
         if not config.config_valid:
-            raise ValidationError({"detail": "SES configuration is not valid. Please configure and validate AWS SES credentials before adding a domain."})
+            raise ValidationError(
+                {
+                    "detail": "SES configuration is not valid. Please configure and validate AWS SES credentials before adding a domain."
+                }
+            )
 
         if VerifiedDomain.objects.filter(project=project).exists():
-            raise ValidationError({"detail": "This project already has a verified domain."})
+            raise ValidationError(
+                {"detail": "This project already has a verified domain."}
+            )
 
         serializer = VerifiedDomainSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -337,7 +375,12 @@ class ProjectDomainView(APIView):
         instance.mail_from_status = mail_from_status
         instance.last_checked_at = timezone.now()
         instance.save(update_fields=["status", "mail_from_status", "last_checked_at"])
-        return Response(VerifiedDomainSerializer(instance, context={"dns_check_records": dns_records}).data, status=status.HTTP_201_CREATED)
+        return Response(
+            VerifiedDomainSerializer(
+                instance, context={"dns_check_records": dns_records}
+            ).data,
+            status=status.HTTP_201_CREATED,
+        )
 
     @extend_schema(tags=["Verified Domains"], responses={204: None})
     def delete(self, request, project_pk):
@@ -353,7 +396,6 @@ class ProjectDomainView(APIView):
             pass  # best-effort; delete locally regardless
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
 
 
 @extend_schema_view(
@@ -378,14 +420,18 @@ class CampaignViewSet(viewsets.ModelViewSet):
         return project
 
     def get_queryset(self):
-        return Campaign.objects.filter(project=self._get_project()).prefetch_related("tags")
+        return Campaign.objects.filter(project=self._get_project()).prefetch_related(
+            "tags"
+        )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context["project"] = self._get_project()
         return context
 
-    @extend_schema(tags=["Campaigns"], request=None, responses={200: CampaignSerializer})
+    @extend_schema(
+        tags=["Campaigns"], request=None, responses={200: CampaignSerializer}
+    )
     @action(detail=True, methods=["post"])
     def send(self, request, project_pk=None, pk=None):
         from .tasks import send_campaign_task
@@ -422,16 +468,25 @@ class UnsubscribeView(APIView):
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data["email"]
 
-        AudienceMember.objects.filter(project=project, email=email).update(subscribed=False)
+        AudienceMember.objects.filter(project=project, email=email).update(
+            subscribed=False
+        )
         return Response({"detail": "You have been unsubscribed successfully."})
 
 
 @extend_schema_view(
-    list=extend_schema(tags=["API Key"], description="List all API keys in the application."),
+    list=extend_schema(
+        tags=["API Key"], description="List all API keys in the application."
+    ),
     create=extend_schema(tags=["API Key"], description="Create a new named API key."),
     destroy=extend_schema(tags=["API Key"], description="Delete an API key."),
 )
-class ApiKeyViewSet(mixins.ListModelMixin, mixins.CreateModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+class ApiKeyViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ApiKeySerializer
 
@@ -449,7 +504,12 @@ class PublicAudienceMemberView(APIView):
     @extend_schema(
         tags=["Public API"],
         request=PublicAudienceMemberSerializer,
-        responses={201: AudienceMemberSerializer, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+        responses={
+            201: AudienceMemberSerializer,
+            400: OpenApiTypes.OBJECT,
+            401: OpenApiTypes.OBJECT,
+            404: OpenApiTypes.OBJECT,
+        },
         parameters=[
             OpenApiParameter(
                 name="X-API-Key",
@@ -464,10 +524,14 @@ class PublicAudienceMemberView(APIView):
     def post(self, request):
         raw_key = request.headers.get("X-API-Key")
         if not raw_key:
-            return Response({"detail": "API key is required."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"detail": "API key is required."}, status=status.HTTP_401_UNAUTHORIZED
+            )
 
         if not ApiKey.objects.filter(key=raw_key).exists():
-            return Response({"detail": "Invalid API key."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"detail": "Invalid API key."}, status=status.HTTP_401_UNAUTHORIZED
+            )
 
         serializer = PublicAudienceMemberSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -475,7 +539,9 @@ class PublicAudienceMemberView(APIView):
 
         project = Project.objects.filter(pk=data["project_pk"]).first()
         if not project:
-            return Response({"detail": "Project not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"detail": "Project not found."}, status=status.HTTP_404_NOT_FOUND
+            )
 
         tags = []
         for tag_name in data.get("tags", []):
@@ -492,7 +558,9 @@ class PublicAudienceMemberView(APIView):
             )
         except IntegrityError:
             return Response(
-                {"detail": "An audience member with this email already exists in this project."},
+                {
+                    "detail": "An audience member with this email already exists in this project."
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -500,4 +568,43 @@ class PublicAudienceMemberView(APIView):
         return Response(
             AudienceMemberSerializer(member, context={"project": project}).data,
             status=status.HTTP_201_CREATED,
+        )
+
+
+_onboarding_response = inline_serializer(
+    name="OnboardingResponse",
+    fields={
+        "username_changed": drf_serializers.BooleanField(),
+        "password_changed": drf_serializers.BooleanField(),
+        "project_created": drf_serializers.BooleanField(),
+        "ses_configured": drf_serializers.BooleanField(),
+        "domain_configured": drf_serializers.BooleanField(),
+    },
+)
+
+
+class OnboardingView(APIView):
+    permission_classes = (permissions.IsAuthenticated,)
+
+    @extend_schema(tags=["Onboarding"], responses={200: _onboarding_response})
+    def get(self, request: Request) -> Response:
+        user = request.user
+
+        username_changed = user.username != "admin"
+        password_changed = not user.check_password("admin")
+        project_created = Project.objects.filter(owner=user).exists()
+        ses_configured = SESConfiguration.objects.filter(config_valid=True).exists()
+        domain_configured = VerifiedDomain.objects.filter(
+            project__owner=user, status=VerifiedDomain.STATUS_VERIFIED
+        ).exists()
+
+        return Response(
+            {
+                "username_changed": username_changed,
+                "password_changed": password_changed,
+                "project_created": project_created,
+                "ses_configured": ses_configured,
+                "domain_configured": domain_configured,
+            },
+            status=status.HTTP_200_OK,
         )
