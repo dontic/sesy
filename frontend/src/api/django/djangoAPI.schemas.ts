@@ -144,6 +144,14 @@ export const MailFromStatusEnum = {
   failed: "failed",
 } as const;
 
+export interface OnboardingResponse {
+  username_changed: boolean;
+  password_changed: boolean;
+  project_created: boolean;
+  ses_configured: boolean;
+  domain_configured: boolean;
+}
+
 export interface PaginatedAudienceMemberList {
   count: number;
   /** @nullable */

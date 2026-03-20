@@ -178,6 +178,20 @@ paths:
       responses:
         '204':
           description: No response body
+  /sesy/onboarding/:
+    get:
+      operationId: sesy_onboarding_retrieve
+      tags:
+      - Onboarding
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnboardingResponse'
+          description: ''
   /sesy/projects/:
     get:
       operationId: sesy_projects_list
@@ -1215,6 +1229,25 @@ components:
         * `pending` - Pending
         * `verified` - Verified
         * `failed` - Failed
+    OnboardingResponse:
+      type: object
+      properties:
+        username_changed:
+          type: boolean
+        password_changed:
+          type: boolean
+        project_created:
+          type: boolean
+        ses_configured:
+          type: boolean
+        domain_configured:
+          type: boolean
+      required:
+      - domain_configured
+      - password_changed
+      - project_created
+      - ses_configured
+      - username_changed
     PaginatedAudienceMemberList:
       type: object
       required:
