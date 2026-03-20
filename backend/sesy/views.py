@@ -595,7 +595,7 @@ class OnboardingView(APIView):
         project_created = Project.objects.filter(owner=user).exists()
         ses_configured = SESConfiguration.objects.filter(config_valid=True).exists()
         domain_configured = VerifiedDomain.objects.filter(
-            project__owner=user, status=VerifiedDomain.STATUS_VERIFIED
+            project__owner=user
         ).exists()
 
         return Response(
