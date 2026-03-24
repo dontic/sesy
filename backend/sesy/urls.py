@@ -11,6 +11,7 @@ from .views import (
     PublicAudienceMemberView,
     UnsubscribeView,
     OnboardingView,
+    CsvImportTaskStatusView,
 )
 
 router = routers.DefaultRouter()
@@ -50,6 +51,11 @@ urlpatterns = (
             "onboarding/",
             OnboardingView.as_view(),
             name="onboarding",
+        ),
+        path(
+            "tasks/<str:task_id>/",
+            CsvImportTaskStatusView.as_view(),
+            name="csv-import-task-status",
         ),
     ]
 )

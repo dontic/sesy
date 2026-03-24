@@ -1,3 +1,5 @@
+import csv
+import io
 import logging
 import time
 
@@ -35,6 +37,93 @@ def _inject_footer(html: str, footer: str) -> str:
     if idx != -1:
         return html[:idx] + footer + html[idx:]
     return html + footer
+
+
+@shared_task(bind=True)
+def import_csv_task(self, project_pk: int, content: str) -> dict:
+    from .models import AudienceMember, Project, Tag
+
+    project = Project.objects.get(pk=project_pk)
+
+    reader = csv.DictReader(io.StringIO(content))
+    fieldnames = set(reader.fieldnames or [])
+    has_tags_column = "tags" in fieldnames
+    has_first_name = "first_name" in fieldnames
+    has_last_name = "last_name" in fieldnames
+
+    members_to_create = []
+    email_tags_map = {}
+
+    for row in reader:
+        email = row["email"].strip()
+        if not email:
+            continue
+        if has_tags_column and row["tags"].strip():
+            email_tags_map[email] = [
+                t.strip() for t in row["tags"].split(",") if t.strip()
+            ]
+        members_to_create.append(
+            AudienceMember(
+                project=project,
+                email=email,
+                first_name=row["first_name"].strip() if has_first_name else "",
+                last_name=row["last_name"].strip() if has_last_name else "",
+            )
+        )
+
+    total = len(members_to_create)
+
+    self.update_state(
+        state="PROGRESS",
+        meta={"processed": 0, "total": total, "created": 0, "skipped": 0},
+    )
+
+    existing_emails = set(
+        AudienceMember.objects.filter(
+            project=project,
+            email__in=[m.email for m in members_to_create],
+        ).values_list("email", flat=True)
+    )
+    new_members = [m for m in members_to_create if m.email not in existing_emails]
+    skipped_count = total - len(new_members)
+    created_count = 0
+
+    chunk_size = 1000
+    for i in range(0, len(new_members), chunk_size):
+        chunk = new_members[i : i + chunk_size]
+        AudienceMember.objects.bulk_create(chunk)
+        created_count += len(chunk)
+        self.update_state(
+            state="PROGRESS",
+            meta={
+                "processed": created_count + skipped_count,
+                "total": total,
+                "created": created_count,
+                "skipped": skipped_count,
+            },
+        )
+
+    if email_tags_map:
+        all_tag_names = {name for names in email_tags_map.values() for name in names}
+        tag_objects = {}
+        for tag_name in all_tag_names:
+            tag, _ = Tag.objects.get_or_create(project=project, name=tag_name)
+            tag_objects[tag_name] = tag
+
+        members_with_tags = AudienceMember.objects.filter(
+            project=project, email__in=email_tags_map.keys()
+        )
+        for member in members_with_tags:
+            tags_for_member = [
+                tag_objects[name] for name in email_tags_map[member.email]
+            ]
+            member.tags.add(*tags_for_member)
+
+    return {
+        "created": created_count,
+        "skipped": skipped_count,
+        "total_rows": total,
+    }
 
 
 @shared_task

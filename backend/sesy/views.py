@@ -43,6 +43,8 @@ from .serializers import (
     VerifiedDomainSerializer,
     UnsubscribeSerializer,
 )
+from .tasks import import_csv_task
+from celery.result import AsyncResult
 
 
 def _get_ses_client():
@@ -206,12 +208,10 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
         tags=["Audience Members"],
         request={"multipart/form-data": AudienceMemberCsvUploadSerializer},
         responses={
-            200: {
+            202: {
                 "type": "object",
                 "properties": {
-                    "created": {"type": "integer"},
-                    "skipped": {"type": "integer"},
-                    "total_rows": {"type": "integer"},
+                    "task_id": {"type": "string"},
                 },
             }
         },
@@ -239,71 +239,55 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        fieldnames = set(reader.fieldnames)
-        has_tags_column = "tags" in fieldnames
-        has_first_name = "first_name" in fieldnames
-        has_last_name = "last_name" in fieldnames
-        members_to_create = []
-        email_tags_map = {}  # email -> list of tag name strings
+        task = import_csv_task.delay(project.pk, content)
+        return Response({"task_id": task.id}, status=status.HTTP_202_ACCEPTED)
 
-        for row in reader:
-            email = row["email"].strip()
-            if not email:
-                continue
-            if has_tags_column and row["tags"].strip():
-                email_tags_map[email] = [
-                    t.strip() for t in row["tags"].split(",") if t.strip()
-                ]
-            members_to_create.append(
-                AudienceMember(
-                    project=project,
-                    email=email,
-                    first_name=row["first_name"].strip() if has_first_name else "",
-                    last_name=row["last_name"].strip() if has_last_name else "",
-                )
-            )
 
-        total_rows = len(members_to_create)
+class CsvImportTaskStatusView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
-        existing_emails = set(
-            AudienceMember.objects.filter(
-                project=project,
-                email__in=[m.email for m in members_to_create],
-            ).values_list("email", flat=True)
-        )
-        new_members = [m for m in members_to_create if m.email not in existing_emails]
-        skipped_count = total_rows - len(new_members)
-
-        chunk_size = 1000
-        for i in range(0, len(new_members), chunk_size):
-            chunk = new_members[i : i + chunk_size]
-            AudienceMember.objects.bulk_create(chunk)
-
-        created_count = len(new_members)
-
-        if email_tags_map:
-            all_tag_names = {name for names in email_tags_map.values() for name in names}
-            tag_objects = {}
-            for tag_name in all_tag_names:
-                tag, _ = Tag.objects.get_or_create(project=project, name=tag_name)
-                tag_objects[tag_name] = tag
-
-            members_with_tags = AudienceMember.objects.filter(
-                project=project, email__in=email_tags_map.keys()
-            )
-            for member in members_with_tags:
-                tags_for_member = [
-                    tag_objects[name] for name in email_tags_map[member.email]
-                ]
-                member.tags.add(*tags_for_member)
-
-        return Response(
-            {
-                "created": created_count,
-                "skipped": skipped_count,
-                "total_rows": total_rows,
+    @extend_schema(
+        tags=["Audience Members"],
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "status": {"type": "string", "enum": ["pending", "in_progress", "succeeded", "failed"]},
+                    "processed": {"type": "integer"},
+                    "total": {"type": "integer"},
+                    "created": {"type": "integer"},
+                    "skipped": {"type": "integer"},
+                },
             }
-        )
+        },
+    )
+    def get(self, request, task_id):
+        result = AsyncResult(task_id)
+        state = result.state
+
+        if state == "PENDING":
+            return Response({"status": "pending", "processed": 0, "total": 0, "created": 0, "skipped": 0})
+        elif state == "PROGRESS":
+            meta = result.info or {}
+            return Response({
+                "status": "in_progress",
+                "processed": meta.get("processed", 0),
+                "total": meta.get("total", 0),
+                "created": meta.get("created", 0),
+                "skipped": meta.get("skipped", 0),
+            })
+        elif state == "SUCCESS":
+            info = result.result or {}
+            return Response({
+                "status": "succeeded",
+                "processed": info.get("total_rows", 0),
+                "total": info.get("total_rows", 0),
+                "created": info.get("created", 0),
+                "skipped": info.get("skipped", 0),
+            })
+        else:
+            # FAILURE or other
+            return Response({"status": "failed", "detail": str(result.result)})
 
 
 def _sync_ses_config(config):
