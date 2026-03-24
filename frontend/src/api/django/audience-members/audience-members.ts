@@ -5,7 +5,8 @@ import type {
   AudienceMemberRequest,
   PaginatedAudienceMemberList,
   SesyProjectsMembersListParams,
-  SesyProjectsMembersUploadCsvCreate200,
+  SesyProjectsMembersUploadCsvCreate202,
+  SesyTasksRetrieve200,
 } from "../djangoAPI.schemas";
 
 import { customAxiosInstance } from "../../axios";
@@ -79,19 +80,28 @@ export const sesyProjectsMembersUploadCsvCreate = (
   projectPk: number,
   audienceMemberCsvUploadRequest: AudienceMemberCsvUploadRequest,
   options?: SecondParameter<
-    typeof customAxiosInstance<SesyProjectsMembersUploadCsvCreate200>
+    typeof customAxiosInstance<SesyProjectsMembersUploadCsvCreate202>
   >,
 ) => {
   const formData = new FormData();
   formData.append(`file`, audienceMemberCsvUploadRequest.file);
 
-  return customAxiosInstance<SesyProjectsMembersUploadCsvCreate200>(
+  return customAxiosInstance<SesyProjectsMembersUploadCsvCreate202>(
     {
       url: `/sesy/projects/${projectPk}/members/upload-csv/`,
       method: "POST",
       headers: { "Content-Type": "multipart/form-data" },
       data: formData,
     },
+    options,
+  );
+};
+export const sesyTasksRetrieve = (
+  taskId: string,
+  options?: SecondParameter<typeof customAxiosInstance<SesyTasksRetrieve200>>,
+) => {
+  return customAxiosInstance<SesyTasksRetrieve200>(
+    { url: `/sesy/tasks/${taskId}/`, method: "GET" },
     options,
   );
 };
@@ -112,4 +122,7 @@ export type SesyProjectsMembersDestroyResult = NonNullable<
 >;
 export type SesyProjectsMembersUploadCsvCreateResult = NonNullable<
   Awaited<ReturnType<typeof sesyProjectsMembersUploadCsvCreate>>
+>;
+export type SesyTasksRetrieveResult = NonNullable<
+  Awaited<ReturnType<typeof sesyTasksRetrieve>>
 >;
