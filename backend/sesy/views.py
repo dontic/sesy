@@ -586,9 +586,18 @@ class PublicAudienceMemberView(APIView):
         request=PublicAudienceMemberSerializer,
         responses={
             201: AudienceMemberSerializer,
-            400: OpenApiTypes.OBJECT,
-            401: OpenApiTypes.OBJECT,
-            404: OpenApiTypes.OBJECT,
+            400: inline_serializer(
+                name="PublicMemberBadRequest",
+                fields={"detail": drf_serializers.CharField()},
+            ),
+            401: inline_serializer(
+                name="PublicMemberUnauthorized",
+                fields={"detail": drf_serializers.CharField()},
+            ),
+            404: inline_serializer(
+                name="PublicMemberNotFound",
+                fields={"detail": drf_serializers.CharField()},
+            ),
         },
         parameters=[
             OpenApiParameter(
@@ -636,15 +645,11 @@ class PublicAudienceMemberView(APIView):
                 last_name=data["last_name"],
                 subscribed=True,
             )
+            member.tags.set(tags)
         except IntegrityError:
-            return Response(
-                {
-                    "detail": "An audience member with this email already exists in this project."
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        member.tags.set(tags)
+            member = AudienceMember.objects.get(project=project, email=data["email"])
+            if tags:
+                member.tags.add(*tags)
         return Response(
             AudienceMemberSerializer(member, context={"project": project}).data,
             status=status.HTTP_201_CREATED,
