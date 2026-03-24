@@ -712,18 +712,14 @@ paths:
       security:
       - cookieAuth: []
       responses:
-        '200':
+        '202':
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  created:
-                    type: integer
-                  skipped:
-                    type: integer
-                  total_rows:
-                    type: integer
+                  task_id:
+                    type: string
           description: ''
   /sesy/projects/{project_pk}/tags/:
     get:
@@ -1035,6 +1031,42 @@ paths:
       responses:
         '204':
           description: No response body
+  /sesy/tasks/{task_id}/:
+    get:
+      operationId: sesy_tasks_retrieve
+      parameters:
+      - in: path
+        name: task_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Audience Members
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum:
+                    - pending
+                    - in_progress
+                    - succeeded
+                    - failed
+                  processed:
+                    type: integer
+                  total:
+                    type: integer
+                  created:
+                    type: integer
+                  skipped:
+                    type: integer
+          description: ''
 components:
   schemas:
     ApiKey:

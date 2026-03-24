@@ -366,10 +366,8 @@ export type SesyProjectsMembersListParams = {
   tag?: string;
 };
 
-export type SesyProjectsMembersUploadCsvCreate200 = {
-  created?: number;
-  skipped?: number;
-  total_rows?: number;
+export type SesyProjectsMembersUploadCsvCreate202 = {
+  task_id?: string;
 };
 
 export type SesyPublicMembersCreate400 = { [key: string]: unknown };
@@ -377,3 +375,22 @@ export type SesyPublicMembersCreate400 = { [key: string]: unknown };
 export type SesyPublicMembersCreate401 = { [key: string]: unknown };
 
 export type SesyPublicMembersCreate404 = { [key: string]: unknown };
+
+export type SesyTasksRetrieve200Status =
+  (typeof SesyTasksRetrieve200Status)[keyof typeof SesyTasksRetrieve200Status];
+
+// eslint-disable-next-line @typescript-eslint/no-redeclare
+export const SesyTasksRetrieve200Status = {
+  pending: "pending",
+  in_progress: "in_progress",
+  succeeded: "succeeded",
+  failed: "failed",
+} as const;
+
+export type SesyTasksRetrieve200 = {
+  status?: SesyTasksRetrieve200Status;
+  processed?: number;
+  total?: number;
+  created?: number;
+  skipped?: number;
+};
