@@ -30,6 +30,7 @@ const ImportCsvDialog = ({
 }: Props) => {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{
     created: number;
     skipped: number;
@@ -37,9 +38,15 @@ const ImportCsvDialog = ({
   } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const clearFile = () => {
+    setFile(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
   const handleUpload = () => {
     if (!file) return;
     setUploading(true);
+    setError(null);
     sesyProjectsMembersUploadCsvCreate(projectPk, { file })
       .then((res) => {
         setResult({
@@ -49,6 +56,18 @@ const ImportCsvDialog = ({
         });
         onImported();
       })
+      .catch((err) => {
+        const status = err?.response?.status;
+        if (status === 400) {
+          setError(
+            'Invalid CSV format. Make sure the file contains a valid "email" header (case-sensitive) and follows the format described above.'
+          );
+          clearFile();
+        } else {
+          setError("An unexpected error occurred. Please try again.");
+          clearFile();
+        }
+      })
       .finally(() => setUploading(false));
   };
 
@@ -56,6 +75,8 @@ const ImportCsvDialog = ({
     if (!open) {
       setFile(null);
       setResult(null);
+      setError(null);
+      if (inputRef.current) inputRef.current.value = "";
     }
     onOpenChange(open);
   };
@@ -93,6 +114,12 @@ const ImportCsvDialog = ({
               </ul>
             </AlertDescription>
           </Alert>
+
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
           {result ? (
             <div className="text-sm text-muted-foreground">
