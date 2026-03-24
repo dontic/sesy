@@ -59,6 +59,7 @@ const Audience = () => {
   const [tagFilter, setTagFilter] = useState<string>("");
   const [tags, setTags] = useState<Tag[]>([]);
   const [filterOpen, setFilterOpen] = useState(false);
+  const [membersRefreshKey, setMembersRefreshKey] = useState(0);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const totalPages = Math.ceil(count / PAGE_SIZE);
@@ -70,7 +71,7 @@ const Audience = () => {
   useEffect(() => {
     if (!currentProject) return;
     sesyProjectsTagsList(String(currentProject.pk)).then(setTags);
-  }, [currentProject]);
+  }, [currentProject, membersRefreshKey]);
 
   // Debounce search input
   useEffect(() => {
@@ -101,7 +102,7 @@ const Audience = () => {
         setCount(res.count);
       })
       .finally(() => setLoading(false));
-  }, [currentProject, page, search, subscribedFilter, tagFilter]);
+  }, [currentProject, page, search, subscribedFilter, tagFilter, membersRefreshKey]);
 
   const handleSaved = (updated: AudienceMember) => {
     setMembers((prev) => prev.map((m) => (m.pk === updated.pk ? updated : m)));
@@ -421,6 +422,7 @@ const Audience = () => {
           projectPk={String(currentProject.pk)}
           open={manageTagsOpen}
           onOpenChange={setManageTagsOpen}
+          onChanged={() => setMembersRefreshKey((k) => k + 1)}
         />
       )}
     </SideBarLayout>

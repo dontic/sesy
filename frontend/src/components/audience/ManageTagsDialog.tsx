@@ -32,9 +32,10 @@ interface Props {
   projectPk: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onChanged?: () => void;
 }
 
-const ManageTagsDialog = ({ projectPk, open, onOpenChange }: Props) => {
+const ManageTagsDialog = ({ projectPk, open, onOpenChange, onChanged }: Props) => {
   const [tags, setTags] = useState<Tag[]>([]);
   const [newTagName, setNewTagName] = useState("");
   const [adding, setAdding] = useState(false);
@@ -78,6 +79,7 @@ const ManageTagsDialog = ({ projectPk, open, onOpenChange }: Props) => {
       .then((updated) => {
         setTags((prev) => prev.map((t) => (t.pk === pk ? updated : t)));
         setEditingPk(null);
+        onChanged?.();
       })
       .catch((err) => {
         if (err?.response?.status === 409) {
@@ -108,6 +110,7 @@ const ManageTagsDialog = ({ projectPk, open, onOpenChange }: Props) => {
         setTags((prev) => prev.filter((t) => t.pk !== mergeInfo.sourcePk));
         setEditingPk(null);
         setMergeInfo(null);
+        onChanged?.();
       })
       .finally(() => setMerging(false));
   };
