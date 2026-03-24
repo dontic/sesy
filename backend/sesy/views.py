@@ -264,12 +264,22 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
             )
 
         total_rows = len(members_to_create)
-        created_count = 0
+
+        existing_emails = set(
+            AudienceMember.objects.filter(
+                project=project,
+                email__in=[m.email for m in members_to_create],
+            ).values_list("email", flat=True)
+        )
+        new_members = [m for m in members_to_create if m.email not in existing_emails]
+        skipped_count = total_rows - len(new_members)
+
         chunk_size = 1000
-        for i in range(0, total_rows, chunk_size):
-            chunk = members_to_create[i : i + chunk_size]
-            inserted = AudienceMember.objects.bulk_create(chunk, ignore_conflicts=True)
-            created_count += len(inserted)
+        for i in range(0, len(new_members), chunk_size):
+            chunk = new_members[i : i + chunk_size]
+            AudienceMember.objects.bulk_create(chunk)
+
+        created_count = len(new_members)
 
         if email_tags_map:
             all_tag_names = {name for names in email_tags_map.values() for name in names}
@@ -290,7 +300,7 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
         return Response(
             {
                 "created": created_count,
-                "skipped": total_rows - created_count,
+                "skipped": skipped_count,
                 "total_rows": total_rows,
             }
         )
