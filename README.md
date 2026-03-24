@@ -11,7 +11,6 @@
 ![Docker Pulls](https://img.shields.io/docker/pulls/dontic/sesy-backend)
 ![GitHub Repo stars](https://img.shields.io/github/stars/dontic/sesy)
 
-
 > ⚠️ Sesy is still in beta and not yet recommended for production use.
 
 > 👋 Beta testers are welcomed!
@@ -67,7 +66,7 @@ Compare that to Mailchimp at ~$350/month for 50,000 contacts, or Brevo at ~$65/m
 1. Copy `docker-compose.yml` from this repo
 2. Update the environment variables in the compose file to match your domain
 3. Run `docker compose up -d`
-4. Open `http://localhost:8080`
+4. Open `http://localhost:8080` (You will need a reverse proxy or a tunnel to host it under your desired domain)
 5. Log in with username `admin` / password `admin`
 6. The app will guide you trough all the steps.
 
@@ -81,6 +80,7 @@ Sesy is easily updateable with docker.
 
 1. `docker compose pull`
 2. `docker compose up -d`
+
 ---
 
 ## Roadmap
