@@ -72,7 +72,7 @@ Compare that to Mailchimp at ~$350/month for 50,000 contacts, or Brevo at ~$65/m
 
 > 🔒 `.env` holds your secrets and is git-ignored. Never commit it.
 
-> 🛠️ To customise the reverse proxy, edit `deployment/nginx/nginx.conf` and run `docker compose restart nginx`.
+> 🛠️ To customise the reverse proxy, edit `deployment/nginx.conf` and run `docker compose restart nginx`.
 
 ---
 

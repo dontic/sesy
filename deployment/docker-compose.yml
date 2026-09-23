@@ -101,7 +101,7 @@ services:
 
   # ---------------------------------------------------------------------------
   # Nginx — reverse proxy. Routes / to the frontend and /api/ to Django.
-  # Config lives in nginx/nginx.conf.
+  # Config lives in nginx.conf.
   # ---------------------------------------------------------------------------
   nginx:
     image: nginx:1.28
@@ -109,7 +109,7 @@ services:
     ports:
       - "${HTTP_PORT:-8080}:80"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - media:/app/backend/media:ro
       - django_static:/app/backend/django_static:ro
     depends_on:
