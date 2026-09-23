@@ -43,7 +43,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { toast } from "sonner";
-import { useUserStore } from "@/stores/UserStore";
+import { isAdminOrOwner, useUserStore } from "@/stores/UserStore";
+import UsersTab from "@/components/settings/UsersTab";
 import { authMeUpdate, authPasswordChangeCreate } from "@/api/django/auth/auth";
 import {
   sesySesConfigurationRetrieve,
@@ -780,23 +781,6 @@ const AwsSesTab = () => {
   );
 };
 
-const UsersTab = () => {
-  return (
-    <Card className="w-full max-w-lg">
-      <CardHeader>
-        <CardTitle>Users</CardTitle>
-        <CardDescription>
-          Manage users who have access to this project.
-          <br />
-          <br />
-          This feature will be available soon.
-        </CardDescription>
-      </CardHeader>
-      <CardContent />
-    </Card>
-  );
-};
-
 const API_BASE_URL = import.meta.env.DEV ? "http://localhost:8000" : `${window.location.origin}/api`;
 
 const AddMemberSection = ({ apiKey }: { apiKey: ApiKey | undefined }) => {
@@ -1084,6 +1068,10 @@ const ApiTab = () => {
 };
 
 const Settings = () => {
+  const { user } = useUserStore();
+  // Workspace settings are only available to admins and the owner
+  const canManageWorkspace = isAdminOrOwner(user);
+
   return (
     <SideBarLayout title="Settings">
       <div className="flex w-full justify-center overflow-y-auto py-6">
@@ -1091,22 +1079,30 @@ const Settings = () => {
           <Tabs defaultValue="profile">
             <TabsList className="mb-6">
               <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="aws-ses">AWS SES</TabsTrigger>
-              <TabsTrigger value="users">Users</TabsTrigger>
-              <TabsTrigger value="api">API</TabsTrigger>
+              {canManageWorkspace && (
+                <>
+                  <TabsTrigger value="aws-ses">AWS SES</TabsTrigger>
+                  <TabsTrigger value="users">Users</TabsTrigger>
+                  <TabsTrigger value="api">API</TabsTrigger>
+                </>
+              )}
             </TabsList>
             <TabsContent value="profile">
               <ProfileTab />
             </TabsContent>
-            <TabsContent value="aws-ses">
-              <AwsSesTab />
-            </TabsContent>
-            <TabsContent value="users">
-              <UsersTab />
-            </TabsContent>
-            <TabsContent value="api">
-              <ApiTab />
-            </TabsContent>
+            {canManageWorkspace && (
+              <>
+                <TabsContent value="aws-ses">
+                  <AwsSesTab />
+                </TabsContent>
+                <TabsContent value="users">
+                  <UsersTab />
+                </TabsContent>
+                <TabsContent value="api">
+                  <ApiTab />
+                </TabsContent>
+              </>
+            )}
           </Tabs>
         </div>
       </div>

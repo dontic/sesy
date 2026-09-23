@@ -28,3 +28,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
   },
   clearUser: () => set({ user: undefined })
 }));
+
+// Admins and the owner can manage workspace settings and users
+export const isAdminOrOwner = (user: Pick<User, "role"> | undefined): boolean =>
+  user?.role === "owner" || user?.role === "admin";
