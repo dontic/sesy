@@ -41,6 +41,8 @@
             }
         }
     },
+    // Allow npm global packages to be written by the user
+    "postCreateCommand": "sudo chmod -R g+w /usr/local/share/npm-global",
     "features": {
         "ghcr.io/anthropics/devcontainer-features/claude-code:1": {},
         "ghcr.io/devcontainers/features/git:1": {},
