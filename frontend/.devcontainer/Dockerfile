@@ -1,6 +1,6 @@
 # Dockerfile
 
-FROM node:22-bullseye AS build
+FROM node:22-bookworm
 
 ARG NPM_GLOBAL=/usr/local/share/npm-global
 ENV NPM_CONFIG_PREFIX=${NPM_GLOBAL}

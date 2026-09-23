@@ -1,7 +1,7 @@
 # Dockerfile
 
 # Get the base image
-FROM python:3.11-bullseye
+FROM python:3.11-bookworm
 
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1
