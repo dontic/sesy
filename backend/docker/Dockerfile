@@ -7,16 +7,21 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app/backend
 
-# Install pipenv
-RUN pip install -U pipenv
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:0.12 /uv /uvx /bin/
+
+# Use the system Python and put the project venv on the PATH so python, gunicorn and celery resolve to it
+ENV UV_PYTHON_DOWNLOADS=never \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PROJECT_ENVIRONMENT=/app/.venv \
+    PATH="/app/.venv/bin:$PATH"
 
 # Copy only dependency files first (for better cache efficiency)
-COPY Pipfile Pipfile.lock /app/backend/
+COPY pyproject.toml uv.lock .python-version /app/backend/
 
-# Install dependencies (this layer will be cached unless Pipfile changes)
-RUN pipenv requirements > requirements.txt && \
-    pip install -r requirements.txt && \
-    rm -rf ./Pipfile ./Pipfile.lock ./requirements.txt
+# Install dependencies (this layer will be cached unless pyproject.toml or uv.lock change)
+RUN uv sync --locked --no-dev --no-install-project
 
 # Create directories and volumes (these rarely change)
 RUN mkdir -p /app/backend/media

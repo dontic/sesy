@@ -11,10 +11,29 @@ export interface ApiKey {
 
 export interface ApiKeyRequest {
   /**
-   * @minLength 1
-   * @maxLength 100
-   */
+     * @minLength 1
+     * @maxLength 100
+     */
   name?: string;
+}
+
+/**
+ * * `admin` - Admin
+ * * `user` - User
+ */
+export type AssignableRoleEnum = typeof AssignableRoleEnum[keyof typeof AssignableRoleEnum];
+
+
+export const AssignableRoleEnum = {
+  admin: 'admin',
+  user: 'user',
+} as const;
+
+export interface Tag {
+  readonly pk: number;
+  /** @maxLength 100 */
+  name: string;
+  readonly created_at: string;
 }
 
 export interface AudienceMember {
@@ -38,9 +57,9 @@ export interface AudienceMemberCsvUploadRequest {
 
 export interface AudienceMemberRequest {
   /**
-   * @minLength 1
-   * @maxLength 254
-   */
+     * @minLength 1
+     * @maxLength 254
+     */
   email: string;
   /** @maxLength 150 */
   first_name?: string;
@@ -49,6 +68,22 @@ export interface AudienceMemberRequest {
   subscribed?: boolean;
   tags?: number[];
 }
+
+/**
+ * * `draft` - Draft
+ * * `sending` - Sending
+ * * `sent` - Sent
+ * * `failed` - Failed
+ */
+export type CampaignStatusEnum = typeof CampaignStatusEnum[keyof typeof CampaignStatusEnum];
+
+
+export const CampaignStatusEnum = {
+  draft: 'draft',
+  sending: 'sending',
+  sent: 'sent',
+  failed: 'failed',
+} as const;
 
 export interface Campaign {
   readonly pk: number;
@@ -75,48 +110,31 @@ export interface Campaign {
 
 export interface CampaignRequest {
   /**
-   * @minLength 1
-   * @maxLength 255
-   */
+     * @minLength 1
+     * @maxLength 255
+     */
   name: string;
   /**
-   * @minLength 1
-   * @maxLength 254
-   */
+     * @minLength 1
+     * @maxLength 254
+     */
   from_email: string;
   /** @maxLength 255 */
   from_name?: string;
   /**
-   * @minLength 1
-   * @maxLength 998
-   */
+     * @minLength 1
+     * @maxLength 998
+     */
   subject: string;
   /**
-   * HTML body. Use {{first_name}} and {{last_name}} for personalization.
-   * @minLength 1
-   */
+     * HTML body. Use {{first_name}} and {{last_name}} for personalization.
+     * @minLength 1
+     */
   html_body: string;
   /** Send to all audience members. If False, only send to members with the specified tags. */
   send_to_all?: boolean;
   tags?: number[];
 }
-
-/**
- * * `draft` - Draft
- * `sending` - Sending
- * `sent` - Sent
- * `failed` - Failed
- */
-export type CampaignStatusEnum =
-  (typeof CampaignStatusEnum)[keyof typeof CampaignStatusEnum];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const CampaignStatusEnum = {
-  draft: "draft",
-  sending: "sending",
-  sent: "sent",
-  failed: "failed",
-} as const;
 
 export interface DetailResponse {
   detail: string;
@@ -131,17 +149,16 @@ export interface LoginRequest {
 
 /**
  * * `pending` - Pending
- * `verified` - Verified
- * `failed` - Failed
+ * * `verified` - Verified
+ * * `failed` - Failed
  */
-export type MailFromStatusEnum =
-  (typeof MailFromStatusEnum)[keyof typeof MailFromStatusEnum];
+export type MailFromStatusEnum = typeof MailFromStatusEnum[keyof typeof MailFromStatusEnum];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
+
 export const MailFromStatusEnum = {
-  pending: "pending",
-  verified: "verified",
-  failed: "failed",
+  pending: 'pending',
+  verified: 'verified',
+  failed: 'failed',
 } as const;
 
 export interface OnboardingResponse {
@@ -163,7 +180,7 @@ export interface PaginatedAudienceMemberList {
 
 export interface PasswordChangeRequest {
   /** @minLength 1 */
-  old_password: string;
+  old_password?: string;
   /** @minLength 1 */
   new_password1: string;
   /** @minLength 1 */
@@ -171,157 +188,43 @@ export interface PasswordChangeRequest {
 }
 
 /**
- * * `unknown` - Unknown
- * `sandbox` - Sandbox
- * `production` - Production
+ * Used by admins and the owner to list, create and update other users.
  */
-export type ProductionStatusEnum =
-  (typeof ProductionStatusEnum)[keyof typeof ProductionStatusEnum];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const ProductionStatusEnum = {
-  unknown: "unknown",
-  sandbox: "sandbox",
-  production: "production",
-} as const;
-
-export interface Project {
-  readonly pk: number;
-  /** @maxLength 255 */
-  name: string;
-  description?: string;
-  readonly domain: VerifiedDomain;
-  readonly created_at: string;
-  readonly updated_at: string;
-}
-
-export interface ProjectRequest {
-  /**
-   * @minLength 1
-   * @maxLength 255
-   */
-  name: string;
-  description?: string;
-}
-
-export interface PublicAudienceMemberRequest {
-  project_pk: number;
-  /** @minLength 1 */
-  email: string;
+export interface PatchedUserManagementUpdateRequest {
   /** @maxLength 150 */
   first_name?: string;
   /** @maxLength 150 */
   last_name?: string;
-  tags?: string[];
-}
-
-export interface SESConfiguration {
-  readonly pk: number;
-  /** @maxLength 255 */
-  aws_access_key_id: string;
-  /** @maxLength 50 */
-  aws_region?: string;
-  /** Max emails per second */
-  sending_rate?: number;
-  readonly production_status: ProductionStatusEnum;
-  /**
-   * Max sending rate (emails/sec) retrieved from AWS SES
-   * @nullable
-   */
-  readonly max_sending_rate: number | null;
-  /** Indicates whether the AWS credentials are valid and reachable */
-  readonly config_valid: boolean;
-  readonly created_at: string;
-  readonly updated_at: string;
-}
-
-export interface SESConfigurationRequest {
-  /**
-   * @minLength 1
-   * @maxLength 255
-   */
-  aws_access_key_id: string;
-  aws_secret_access_key?: string;
-  /**
-   * @minLength 1
-   * @maxLength 50
-   */
-  aws_region?: string;
-  /** Max emails per second */
-  sending_rate?: number;
+  role?: AssignableRoleEnum;
 }
 
 /**
- * * `pending` - Pending
- * `verified` - Verified
- * `failed` - Failed
+ * * `unknown` - Unknown
+ * * `sandbox` - Sandbox
+ * * `production` - Production
  */
-export type StatusA39Enum = (typeof StatusA39Enum)[keyof typeof StatusA39Enum];
+export type ProductionStatusEnum = typeof ProductionStatusEnum[keyof typeof ProductionStatusEnum];
 
-// eslint-disable-next-line @typescript-eslint/no-redeclare
-export const StatusA39Enum = {
-  pending: "pending",
-  verified: "verified",
-  failed: "failed",
+
+export const ProductionStatusEnum = {
+  unknown: 'unknown',
+  sandbox: 'sandbox',
+  production: 'production',
 } as const;
 
-export interface Tag {
-  readonly pk: number;
-  /** @maxLength 100 */
-  name: string;
-  readonly created_at: string;
-}
+/**
+ * * `pending` - Pending
+ * * `verified` - Verified
+ * * `failed` - Failed
+ */
+export type StatusA39Enum = typeof StatusA39Enum[keyof typeof StatusA39Enum];
 
-export interface TagMergeRequestRequest {
-  target_tag_pk: number;
-}
 
-export interface TagNameConflictDetail {
-  message: string;
-  conflicting_tag_pk: number;
-}
-
-export interface TagNameConflictError {
-  name: TagNameConflictDetail;
-}
-
-export interface TagRequest {
-  /**
-   * @minLength 1
-   * @maxLength 100
-   */
-  name: string;
-}
-
-export interface UnsubscribeRequest {
-  /** @minLength 1 */
-  email: string;
-}
-
-export interface User {
-  readonly pk: number;
-  /** Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only. */
-  readonly username: string;
-  readonly email: string;
-  readonly first_name: string;
-  readonly last_name: string;
-  /** Designates whether the user can log into this admin site. */
-  readonly is_staff: boolean;
-}
-
-export interface UserUpdateRequest {
-  /**
-   * Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
-   * @minLength 1
-   * @maxLength 150
-   * @pattern ^[\w.@+-]+$
-   */
-  username: string;
-  /** @maxLength 150 */
-  first_name?: string;
-  /** @maxLength 150 */
-  last_name?: string;
-}
+export const StatusA39Enum = {
+  pending: 'pending',
+  verified: 'verified',
+  failed: 'failed',
+} as const;
 
 export interface VerifiedDomain {
   readonly pk: number;
@@ -339,52 +242,265 @@ export interface VerifiedDomain {
   readonly updated_at: string;
 }
 
+export interface Project {
+  readonly pk: number;
+  /** @maxLength 255 */
+  name: string;
+  description?: string;
+  readonly domain: VerifiedDomain;
+  readonly created_at: string;
+  readonly updated_at: string;
+}
+
+export interface ProjectRequest {
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  name: string;
+  description?: string;
+}
+
+export interface PublicAudienceMemberRequest {
+  project_pk: number;
+  /** @minLength 1 */
+  email: string;
+  /** @maxLength 150 */
+  first_name?: string;
+  /** @maxLength 150 */
+  last_name?: string;
+  /**
+     * @items.minLength 1
+     * @items.maxLength 100
+     */
+  tags?: string[];
+}
+
+export interface PublicMemberBadRequest {
+  detail: string;
+}
+
+export interface PublicMemberNotFound {
+  detail: string;
+}
+
+export interface PublicMemberUnauthorized {
+  detail: string;
+}
+
+/**
+ * * `owner` - Owner
+ * * `admin` - Admin
+ * * `user` - User
+ */
+export type RoleEnum = typeof RoleEnum[keyof typeof RoleEnum];
+
+
+export const RoleEnum = {
+  owner: 'owner',
+  admin: 'admin',
+  user: 'user',
+} as const;
+
+export interface SESConfiguration {
+  readonly pk: number;
+  /** @maxLength 255 */
+  aws_access_key_id: string;
+  /** @maxLength 50 */
+  aws_region?: string;
+  /** Max emails per second */
+  sending_rate?: number;
+  readonly production_status: ProductionStatusEnum;
+  /**
+     * Max sending rate (emails/sec) retrieved from AWS SES
+     * @nullable
+     */
+  readonly max_sending_rate: number | null;
+  /** Indicates whether the AWS credentials are valid and reachable */
+  readonly config_valid: boolean;
+  readonly created_at: string;
+  readonly updated_at: string;
+}
+
+export interface SESConfigurationRequest {
+  /**
+     * @minLength 1
+     * @maxLength 255
+     */
+  aws_access_key_id: string;
+  aws_secret_access_key?: string;
+  /**
+     * @minLength 1
+     * @maxLength 50
+     */
+  aws_region?: string;
+  /** Max emails per second */
+  sending_rate?: number;
+}
+
+export interface TagMergeRequestRequest {
+  target_tag_pk: number;
+}
+
+export interface TagNameConflictDetail {
+  message: string;
+  conflicting_tag_pk: number;
+}
+
+export interface TagNameConflictError {
+  name: TagNameConflictDetail;
+}
+
+export interface TagRequest {
+  /**
+     * @minLength 1
+     * @maxLength 100
+     */
+  name: string;
+}
+
+export interface TempPassword {
+  readonly username: string;
+  readonly temp_password: string;
+}
+
+export interface UnsubscribeRequest {
+  /** @minLength 1 */
+  email: string;
+}
+
+export interface User {
+  readonly pk: number;
+  /** Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only. */
+  readonly username: string;
+  readonly email: string;
+  readonly first_name: string;
+  readonly last_name: string;
+  /** Designates whether the user can log into this admin site. */
+  readonly is_staff: boolean;
+  readonly role: RoleEnum;
+  /** Designates whether the user must set a new password on next login. */
+  readonly must_change_password: boolean;
+}
+
+/**
+ * Used by admins and the owner to list, create and update other users.
+ */
+export interface UserCreated {
+  readonly pk: number;
+  /**
+     * Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+     * @maxLength 150
+     * @pattern ^[\w.@+-]+$
+     */
+  username: string;
+  /** @maxLength 150 */
+  first_name?: string;
+  /** @maxLength 150 */
+  last_name?: string;
+  role?: AssignableRoleEnum;
+  /** Designates whether the user must set a new password on next login. */
+  readonly must_change_password: boolean;
+  /** @nullable */
+  readonly last_login: string | null;
+  readonly date_joined: string;
+  readonly temp_password: string;
+}
+
+/**
+ * Used by admins and the owner to list, create and update other users.
+ */
+export interface UserManagement {
+  readonly pk: number;
+  /**
+     * Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+     * @maxLength 150
+     * @pattern ^[\w.@+-]+$
+     */
+  username: string;
+  /** @maxLength 150 */
+  first_name?: string;
+  /** @maxLength 150 */
+  last_name?: string;
+  role?: AssignableRoleEnum;
+  /** Designates whether the user must set a new password on next login. */
+  readonly must_change_password: boolean;
+  /** @nullable */
+  readonly last_login: string | null;
+  readonly date_joined: string;
+}
+
+/**
+ * Used by admins and the owner to list, create and update other users.
+ */
+export interface UserManagementRequest {
+  /**
+     * Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+     * @minLength 1
+     * @maxLength 150
+     * @pattern ^[\w.@+-]+$
+     */
+  username: string;
+  /** @maxLength 150 */
+  first_name?: string;
+  /** @maxLength 150 */
+  last_name?: string;
+  role?: AssignableRoleEnum;
+}
+
+export interface UserUpdateRequest {
+  /**
+     * Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+     * @minLength 1
+     * @maxLength 150
+     * @pattern ^[\w.@+-]+$
+     */
+  username: string;
+  /** @maxLength 150 */
+  first_name?: string;
+  /** @maxLength 150 */
+  last_name?: string;
+}
+
 export interface VerifiedDomainRequest {
   /**
-   * @minLength 1
-   * @maxLength 255
-   */
+     * @minLength 1
+     * @maxLength 255
+     */
   domain: string;
 }
 
-export type SesyProjectsDomainCreate400 = { [key: string]: unknown };
+export type SesyProjectsDomainCreate400 = {[key: string]: unknown};
 
 export type SesyProjectsMembersListParams = {
-  /**
-   * A page number within the paginated result set.
-   */
-  page?: number;
-  /**
-   * Number of results to return per page.
-   */
-  page_size?: number;
-  /**
-   * A search term.
-   */
-  search?: string;
-  subscribed?: boolean;
-  tag?: string;
+/**
+ * A page number within the paginated result set.
+ */
+page?: number;
+/**
+ * Number of results to return per page.
+ */
+page_size?: number;
+/**
+ * A search term.
+ */
+search?: string;
+subscribed?: boolean;
+tag?: string;
 };
 
 export type SesyProjectsMembersUploadCsvCreate202 = {
   task_id?: string;
 };
 
-export type SesyPublicMembersCreate400 = { [key: string]: unknown };
+export type SesyTasksRetrieve200Status = typeof SesyTasksRetrieve200Status[keyof typeof SesyTasksRetrieve200Status];
 
-export type SesyPublicMembersCreate401 = { [key: string]: unknown };
 
-export type SesyPublicMembersCreate404 = { [key: string]: unknown };
-
-export type SesyTasksRetrieve200Status =
-  (typeof SesyTasksRetrieve200Status)[keyof typeof SesyTasksRetrieve200Status];
-
-// eslint-disable-next-line @typescript-eslint/no-redeclare
 export const SesyTasksRetrieve200Status = {
-  pending: "pending",
-  in_progress: "in_progress",
-  succeeded: "succeeded",
-  failed: "failed",
+  pending: 'pending',
+  in_progress: 'in_progress',
+  succeeded: 'succeeded',
+  failed: 'failed',
 } as const;
 
 export type SesyTasksRetrieve200 = {
@@ -394,3 +510,4 @@ export type SesyTasksRetrieve200 = {
   created?: number;
   skipped?: number;
 };
+

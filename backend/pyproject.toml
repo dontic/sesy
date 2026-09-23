@@ -1,0 +1,42 @@
+[project]
+name = "sesy-backend"
+version = "0.1.0"
+description = "Sesy backend: Django REST API and Celery workers"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "boto3",
+    "celery",
+    "django",
+    "django-celery-beat",
+    "django-cleanup",
+    "django-cors-headers",
+    "django-filter",
+    "django-health-check",
+    "django-solo",
+    "djangorestframework",
+    "dnspython",
+    "drf-nested-routers",
+    "drf-spectacular",
+    "gunicorn",
+    "markdown",
+    "pillow",
+    "psycopg2",
+    "python-dotenv",
+    "pytz",
+    "redis",
+    "requests",
+    "whitenoise",
+]
+
+[dependency-groups]
+dev = [
+    "celery-types",
+    "django-stubs",
+    "django-types",
+    "djangorestframework-types",
+    "types-jsonschema",
+    "types-pytz",
+]
+
+[tool.uv]
+package = false

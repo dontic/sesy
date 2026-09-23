@@ -15,6 +15,19 @@ export const customAxios = axios.create({
   xsrfHeaderName: "X-CSRFToken"
 });
 
+// Users with a temporary password are blocked by the API until they change it,
+// so send them to the password change page if any request gets rejected for that reason
+customAxios.interceptors.response.use(undefined, (error) => {
+  if (
+    error.response?.status === 403 &&
+    error.response.data?.code === "password_change_required" &&
+    window.location.pathname !== "/change-password"
+  ) {
+    window.location.assign("/change-password");
+  }
+  return Promise.reject(error);
+});
+
 export const customAxiosInstance = <T>(
   config: AxiosRequestConfig,
   options?: AxiosRequestConfig

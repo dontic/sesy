@@ -202,6 +202,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "authentication.middleware.MustChangePasswordMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -332,6 +333,10 @@ SPECTACULAR_SETTINGS = {
     "COMPONENT_SPLIT_REQUEST": True,
     "SCHEMA_PATH_PREFIX": r"/my-project/",
     "SERVERS": [{"url": "/", "description": "Current server"}],
+    "ENUM_NAME_OVERRIDES": {
+        "RoleEnum": "authentication.models.User.Role",
+        "AssignableRoleEnum": [("admin", "Admin"), ("user", "User")],
+    },
 }
 
 

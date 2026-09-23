@@ -24,6 +24,7 @@ const ProtectedLayout = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [onboardingComplete, setOnboardingComplete] = useState(false);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -33,15 +34,23 @@ const ProtectedLayout = () => {
 
       try {
         // Skip auth API call if user is already in the store
-        if (!user) {
-          const userDetails = await authMeRetrieve({
+        let currentUser = user;
+        if (!currentUser) {
+          currentUser = await authMeRetrieve({
             signal: controller.signal
           });
-          console.debug("User logged in:", userDetails);
-          setUser(userDetails);
+          console.debug("User logged in:", currentUser);
+          setUser(currentUser);
         }
 
         setIsAuthenticated(true);
+
+        // The API rejects everything else until the temporary password is replaced
+        if (currentUser.must_change_password) {
+          setMustChangePassword(true);
+          return;
+        }
+        setMustChangePassword(false);
 
         const onboarding = await sesyOnboardingRetrieve({
           signal: controller.signal
@@ -84,6 +93,10 @@ const ProtectedLayout = () => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (mustChangePassword) {
+    return <Navigate to="/change-password" replace />;
   }
 
   if (!onboardingComplete) {

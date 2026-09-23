@@ -118,6 +118,167 @@ paths:
               schema:
                 $ref: '#/components/schemas/DetailResponse'
           description: ''
+  /auth/users/:
+    get:
+      operationId: auth_users_list
+      description: List all users.
+      tags:
+      - Users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserManagement'
+          description: ''
+    post:
+      operationId: auth_users_create
+      description: Create a user with a temporary password they must change on first
+        login.
+      tags:
+      - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserManagementRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UserManagementRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UserManagementRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCreated'
+          description: ''
+  /auth/users/{id}/:
+    get:
+      operationId: auth_users_retrieve
+      description: Retrieve a user.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this User.
+        required: true
+      tags:
+      - Users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserManagement'
+          description: ''
+    patch:
+      operationId: auth_users_partial_update
+      description: Update a user's name or role. The owner cannot be modified here.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this User.
+        required: true
+      tags:
+      - Users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserManagementUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserManagementUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserManagementUpdateRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserManagement'
+          description: ''
+    delete:
+      operationId: auth_users_destroy
+      description: Delete a user. Their projects and API keys are reassigned to the
+        requesting user.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this User.
+        required: true
+      tags:
+      - Users
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /auth/users/{id}/reset-password/:
+    post:
+      operationId: auth_users_reset_password_create
+      description: Generate a new temporary password. The user must change it on next
+        login.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this User.
+        required: true
+      tags:
+      - Users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TempPassword'
+          description: ''
+  /auth/users/{id}/transfer-ownership/:
+    post:
+      operationId: auth_users_transfer_ownership_create
+      description: Make this user the owner. The current owner is downgraded to admin.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this User.
+        required: true
+      tags:
+      - Users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserManagement'
+          description: ''
   /sesy/api-keys/:
     get:
       operationId: sesy_api_keys_list
@@ -240,7 +401,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this project.
         required: true
       tags:
       - Projects
@@ -259,7 +421,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this project.
         required: true
       tags:
       - Projects
@@ -290,7 +453,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this project.
         required: true
       tags:
       - Projects
@@ -966,22 +1130,19 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/PublicMemberBadRequest'
           description: ''
         '401':
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/PublicMemberUnauthorized'
           description: ''
         '404':
           content:
             application/json:
               schema:
-                type: object
-                additionalProperties: {}
+                $ref: '#/components/schemas/PublicMemberNotFound'
           description: ''
   /sesy/ses-configuration/:
     get:
@@ -1107,6 +1268,14 @@ components:
           type: string
           minLength: 1
           maxLength: 100
+    AssignableRoleEnum:
+      enum:
+      - admin
+      - user
+      type: string
+      description: |-
+        * `admin` - Admin
+        * `user` - User
     AudienceMember:
       type: object
       properties:
@@ -1381,7 +1550,20 @@ components:
       required:
       - new_password1
       - new_password2
-      - old_password
+    PatchedUserManagementUpdateRequest:
+      type: object
+      description: Used by admins and the owner to list, create and update other users.
+      properties:
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        role:
+          allOf:
+          - $ref: '#/components/schemas/AssignableRoleEnum'
+          default: user
     ProductionStatusEnum:
       enum:
       - unknown
@@ -1459,6 +1641,37 @@ components:
       required:
       - email
       - project_pk
+    PublicMemberBadRequest:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    PublicMemberNotFound:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    PublicMemberUnauthorized:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    RoleEnum:
+      enum:
+      - owner
+      - admin
+      - user
+      type: string
+      description: |-
+        * `owner` - Owner
+        * `admin` - Admin
+        * `user` - User
     SESConfiguration:
       type: object
       properties:
@@ -1587,6 +1800,18 @@ components:
           maxLength: 100
       required:
       - name
+    TempPassword:
+      type: object
+      properties:
+        username:
+          type: string
+          readOnly: true
+        temp_password:
+          type: string
+          readOnly: true
+      required:
+      - temp_password
+      - username
     UnsubscribeRequest:
       type: object
       properties:
@@ -1624,12 +1849,138 @@ components:
           readOnly: true
           title: Staff status
           description: Designates whether the user can log into this admin site.
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+        must_change_password:
+          type: boolean
+          readOnly: true
+          description: Designates whether the user must set a new password on next
+            login.
       required:
       - email
       - first_name
       - is_staff
       - last_name
+      - must_change_password
       - pk
+      - role
+      - username
+    UserCreated:
+      type: object
+      description: Used by admins and the owner to list, create and update other users.
+      properties:
+        pk:
+          type: integer
+          readOnly: true
+          title: ID
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        role:
+          allOf:
+          - $ref: '#/components/schemas/AssignableRoleEnum'
+          default: user
+        must_change_password:
+          type: boolean
+          readOnly: true
+          description: Designates whether the user must set a new password on next
+            login.
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+        temp_password:
+          type: string
+          readOnly: true
+      required:
+      - date_joined
+      - last_login
+      - must_change_password
+      - pk
+      - temp_password
+      - username
+    UserManagement:
+      type: object
+      description: Used by admins and the owner to list, create and update other users.
+      properties:
+        pk:
+          type: integer
+          readOnly: true
+          title: ID
+        username:
+          type: string
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        role:
+          allOf:
+          - $ref: '#/components/schemas/AssignableRoleEnum'
+          default: user
+        must_change_password:
+          type: boolean
+          readOnly: true
+          description: Designates whether the user must set a new password on next
+            login.
+        last_login:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        date_joined:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - date_joined
+      - last_login
+      - must_change_password
+      - pk
+      - username
+    UserManagementRequest:
+      type: object
+      description: Used by admins and the owner to list, create and update other users.
+      properties:
+        username:
+          type: string
+          minLength: 1
+          description: Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+            only.
+          pattern: ^[\w.@+-]+$
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        role:
+          allOf:
+          - $ref: '#/components/schemas/AssignableRoleEnum'
+          default: user
+      required:
       - username
     UserUpdateRequest:
       type: object

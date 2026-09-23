@@ -444,7 +444,7 @@ function StepSes({ onComplete }: { onComplete: () => void }) {
           Connect your AWS SES account to send emails. You can update these
           credentials later in Settings.{" "}
           <a
-            href="https://github.com/dontic/sesy"
+            href="https://github.com/dontic/sesy/blob/main/docs/configuring-aws-ses.md"
             target="_blank"
             rel="noopener noreferrer"
             className="underline text-foreground hover:text-primary"

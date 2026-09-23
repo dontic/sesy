@@ -115,3 +115,10 @@ Please keep PRs focused — one feature or fix per PR makes review much easier.
 - **Backend** - [Python] - Django REST API + celery workers
 - **Frontned** - [Typescript] - React + tailwindcss + shadcnUI
 - **Deployment** - Docker
+
+### Updating the API client
+
+The frontend API client is generated with [Orval](https://orval.dev) from the backend's OpenAPI schema. After changing any backend endpoints or serializers, regenerate both:
+
+1. From `backend/`, run `python manage.py update_schema` to write the schema to `frontend/src/api/schemas/django/schema.yaml`
+2. From `frontend/`, run `npm run orvalDjango` to regenerate the TypeScript client

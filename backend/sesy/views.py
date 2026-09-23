@@ -21,6 +21,8 @@ from drf_spectacular.utils import (
 )
 from rest_framework import serializers as drf_serializers
 from rest_framework.request import Request
+from authentication.permissions import IsAdminOrOwner
+
 from .filters import AudienceMemberFilter, UnaccentSearchFilter
 from .models import (
     ApiKey,
@@ -72,7 +74,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
 
     def get_queryset(self):
-        return Project.objects.filter(owner=self.request.user)
+        return Project.objects.all()
 
 
 @extend_schema_view(
@@ -105,10 +107,7 @@ class TagViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
 
     def _get_project(self):
-        project = Project.objects.filter(
-            pk=self.kwargs["project_pk"],
-            owner=self.request.user,
-        ).first()
+        project = Project.objects.filter(pk=self.kwargs["project_pk"]).first()
         if not project:
             raise PermissionDenied()
         return project
@@ -184,10 +183,7 @@ class AudienceMemberViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
 
     def _get_project(self):
-        project = Project.objects.filter(
-            pk=self.kwargs["project_pk"],
-            owner=self.request.user,
-        ).first()
+        project = Project.objects.filter(pk=self.kwargs["project_pk"]).first()
         if not project:
             raise PermissionDenied()
         return project
@@ -336,7 +332,7 @@ def _sync_ses_config(config):
 
 
 class SESConfigurationView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAdminOrOwner]
 
     @extend_schema(
         tags=["SES Configuration"],
@@ -375,7 +371,7 @@ class ProjectDomainView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def _get_project(self, request, project_pk):
-        project = Project.objects.filter(pk=project_pk, owner=request.user).first()
+        project = Project.objects.filter(pk=project_pk).first()
         if not project:
             raise PermissionDenied()
         return project
@@ -491,10 +487,7 @@ class CampaignViewSet(viewsets.ModelViewSet):
     http_method_names = ["get", "post", "put", "delete", "head", "options", "trace"]
 
     def _get_project(self):
-        project = Project.objects.filter(
-            pk=self.kwargs["project_pk"],
-            owner=self.request.user,
-        ).first()
+        project = Project.objects.filter(pk=self.kwargs["project_pk"]).first()
         if not project:
             raise PermissionDenied()
         return project
@@ -567,7 +560,7 @@ class ApiKeyViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAdminOrOwner]
     serializer_class = ApiKeySerializer
 
     def get_queryset(self):
@@ -675,13 +668,12 @@ class OnboardingView(APIView):
     def get(self, request: Request) -> Response:
         user = request.user
 
+        # Workspace-wide steps are shared by all users; only the credential steps are per user
         username_changed = user.username != "admin"
         password_changed = not user.check_password("admin")
-        project_created = Project.objects.filter(owner=user).exists()
+        project_created = Project.objects.exists()
         ses_configured = SESConfiguration.objects.filter(config_valid=True).exists()
-        domain_configured = VerifiedDomain.objects.filter(
-            project__owner=user
-        ).exists()
+        domain_configured = VerifiedDomain.objects.exists()
 
         return Response(
             {
