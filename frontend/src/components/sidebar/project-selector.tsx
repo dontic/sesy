@@ -172,7 +172,7 @@ function EditProjectDialog({
   }, [open, project, form]);
 
   async function onSubmit(values: ProjectValues) {
-    const updated = await sesyProjectsUpdate(project.pk.toString(), {
+    const updated = await sesyProjectsUpdate(project.pk, {
       name: values.name,
       description: values.description || undefined
     });
@@ -257,7 +257,7 @@ function DeleteProjectDialog({
   async function handleDelete() {
     setDeleting(true);
     try {
-      await sesyProjectsDestroy(project.pk.toString());
+      await sesyProjectsDestroy(project.pk);
       setProjects(projects.filter((p) => p.pk !== project.pk));
       onOpenChange(false);
     } finally {
