@@ -4,7 +4,7 @@
     "shutdownAction": "stopCompose", // Container behavior on VSCode close: none, stopContainer (default for image or Dockerfile), and stopCompose (default for Docker Compose)
     "dockerComposeFile": "docker-compose.yml",
     "service": "django",
-    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    "workspaceFolder": "/workspaces/sesy/backend",
     // Extensions and settings
     "customizations": {
         "vscode": {
@@ -41,7 +41,21 @@
             }
         }
     },
+    // Allow npm global packages to be written by the user
+    "postCreateCommand": "sudo chmod -R g+w /usr/local/share/npm-global",
+    "features": {
+        "ghcr.io/anthropics/devcontainer-features/claude-code:1": {},
+        "ghcr.io/devcontainers/features/git:1": {},
+        "ghcr.io/jsburckhardt/devcontainer-features/uv:1": {}
+    },
     "mounts": [
-        "source=${localEnv:HOME}/.ssh,target=/root/.ssh,type=bind,consistency=cached"
-    ]
+        "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached", // SSH keys for GitHub
+        "source=${localEnv:HOME}/.claude,target=/home/vscode/.claude,type=bind,consistency=cached"
+    ],
+    "containerEnv": {
+        "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
+    },
+    "remoteUser": "vscode",
+    "containerUser": "vscode",
+    "updateRemoteUserUID": true
 }
