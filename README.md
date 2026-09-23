@@ -63,12 +63,16 @@ Compare that to Mailchimp at ~$350/month for 50,000 contacts, or Brevo at ~$65/m
 
 > ⚠️ You will need an AWS account with SES out of sandbox (production) mode. [Click here](./docs/configuring-aws-ses.md) for a quick guide on how to do it.
 
-1. Copy `docker-compose.yml` from this repo
-2. Update the environment variables in the compose file to match your domain
+1. Copy the [`deployment/`](./deployment) folder from this repo to your server and `cd` into it
+2. Create your env file with `cp .env.template .env` and set at least `DJANGO_SECRET_KEY`, `DOMAIN` and `POSTGRES_PASSWORD`
 3. Run `docker compose up -d`
 4. Open `http://localhost:8080` (You will need a reverse proxy or a tunnel to host it under your desired domain)
 5. Log in with username `admin` / password `admin`
 6. The app will guide you trough all the steps.
+
+> 🔒 `.env` holds your secrets and is git-ignored. Never commit it.
+
+> 🛠️ To customise the reverse proxy, edit `deployment/nginx.conf` and run `docker compose restart nginx`.
 
 ---
 
