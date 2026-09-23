@@ -58,7 +58,15 @@ const OnboardingLayout = () => {
     );
   }
 
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (user?.must_change_password) {
+    return <Navigate to="/change-password" replace />;
+  }
+
+  return <Outlet />;
 };
 
 export default OnboardingLayout;

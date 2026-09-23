@@ -6,19 +6,22 @@ import { authLoginCreate } from "@/api/django/auth/auth";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Icon from "@/assets/icon.svg?react";
+import { useUserStore } from "@/stores/UserStore";
 const Login = () => {
   const navigate = useNavigate();
+  const { setUser } = useUserStore();
 
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (formData: LoginFormValues) => {
     try {
       setIsLoading(true);
-      await authLoginCreate({
+      const user = await authLoginCreate({
         username: formData.username,
         password: formData.password
       });
-      navigate("/campaigns");
+      setUser(user);
+      navigate(user.must_change_password ? "/change-password" : "/campaigns");
     } catch (error: any) {
       console.error("Login error:", error);
       toast.error("Invalid username or password. Please try again.");

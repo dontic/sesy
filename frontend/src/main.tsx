@@ -25,6 +25,7 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const Audience = lazy(() => import("@/pages/Audience"));
 const Unsubscribe = lazy(() => import("@/pages/Unsubscribe"));
 const Onboarding = lazy(() => import("@/pages/Onboarding"));
+const ChangePassword = lazy(() => import("@/pages/ChangePassword"));
 const router = createBrowserRouter([
   {
     path: "/",
@@ -73,6 +74,14 @@ const router = createBrowserRouter([
         )
       }
     ]
+  },
+  {
+    path: "/change-password",
+    element: (
+      <Suspense fallback={<LoadingFallback />}>
+        <ChangePassword />
+      </Suspense>
+    )
   },
   {
     path: "/login",
